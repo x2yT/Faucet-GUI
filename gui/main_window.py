@@ -30,10 +30,11 @@ class MainWindow(QMainWindow):
         save_action.triggered.connect(self.save_file)
         
     def open_file(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open YAML File", "", "YAML Files (*.yaml)")
-        if file_name:
-            self.config = load_config(file_name)
+        config_file_name, _ = QFileDialog.getOpenFileName(self, "Open YAML File", "", "YAML Files (*.yaml)")
+        if config_file_name:
+            self.config = load_config(config_file_name)
             self.populate_tabs()
+            self.setWindowTitle("Faucet GUI - " + config_file_name)
             
     def save_file(self):
         if self.config:

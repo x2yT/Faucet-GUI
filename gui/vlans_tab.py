@@ -1,13 +1,20 @@
 # vlans_tab.py
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, q
+from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt
 
 def create_vlans_tab(config):
     vlans_tab = QWidget()
     vlans_layout = QVBoxLayout()
     for name, vlan in config.vlans.items():
         vlan_group = QWidget()
-        vlan_layout = QVBoxLayout()
-        vlan_layout.addWidget(QLabel(f"VLAN Name: {name}"))
+        vlan_layout = QGridLayout()
+        #vlan_layout.addWidget(QLabel(f"VLAN Name: {name}"))
+        
+        vlan_name_edit = QLineEdit(name)
+        vlan_layout.addWidget(QLabel("VLAN Name:"))
+        vlan_layout.addWidget(vlan_name_edit)
+
         vlan_layout.addWidget(QLabel(f"VID: {vlan.vid}"))
         vlan_layout.addWidget(QLabel(f"Description: {vlan.description}"))
         vlan_layout.addWidget(QLabel(f"ACLs In: {', '.join(vlan.acls_in)}"))
