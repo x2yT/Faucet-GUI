@@ -16,7 +16,7 @@ def create_vlans_tab(config):
         #vlan_name_edit = QLineEdit(name)
         ##vlan_layout.addWidget(QLabel("VLAN Name:"))
         #vlan_layout.addWidget(vlan_name_edit)
-
+    
         vlan_layout.addRow("VID:", QLineEdit(str(vlan.vid), vlan_groupbox))
         vlan_layout.addRow("Description:", QLineEdit(vlan.description, vlan_groupbox))
         vlan_layout.addRow("ACLs In:", QLineEdit(', '.join(vlan.acls_in), vlan_groupbox))
@@ -29,9 +29,8 @@ def create_vlans_tab(config):
         vlan_layout.addRow("Name:", QLineEdit(vlan.name, vlan_groupbox))
         vlan_layout.addRow("Proactive ARP Limit:", QLineEdit(str(vlan.proactive_arp_limit), vlan_groupbox))
         vlan_layout.addRow("Proactive ND Limit:", QLineEdit(str(vlan.proactive_nd_limit), vlan_groupbox))
-        vlan_layout.addRow("Targeted GW Resolution:", QLineEdit(vlan.targeted_gw_resolution, vlan_groupbox))
-        vlan_layout.addRow("Unicast Flood:", QLineEdit(vlan.unicast_flood, vlan_groupbox))
-
+        vlan_layout.addRow("Targeted GW Resolution:", QLineEdit(str(vlan.targeted_gw_resolution), vlan_groupbox))  # Convert bool to str
+        vlan_layout.addRow("Unicast Flood:", QLineEdit(str(vlan.unicast_flood), vlan_groupbox))  # Convert bool to str
 
         routes_label = QLabel("Routes:")
         vlan_layout.addRow(routes_label)
