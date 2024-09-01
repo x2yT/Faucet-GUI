@@ -1,3 +1,5 @@
+# loader.py
+
 import yaml
 from models.vlan import Vlan
 from models.router import Router
@@ -52,4 +54,35 @@ def load_config(yaml_file):
     routers = {k: load_router(v) for k, v in data.get('routers', {}).items()}
     dps = {k: load_dp(v) for k, v in data.get('dps', {}).items()}
     
-    return Config(include=data.get('include', []), vlans=vlans, routers=routers, dps=dps)
+    return Config(vlans=vlans, routers=routers, dps=dps)
+
+def new_config():
+    default_vlan = Vlan(
+        vid=1,
+        description='Default VLAN',
+        acls_in=[],
+        faucet_mac='',
+        faucet_vips=[],
+        routes=[],
+        acl_in=None,
+        dot1x_assigned=False,
+        max_hosts=255,
+        minimum_ip_size_check=True,
+        name='default',
+        proactive_arp_limit=2052,
+        proactive_nd_limit=2052,
+        targeted_gw_resolution=False,
+        unicast_flood=True
+    )
+
+    default_dp = DP(
+        dp_id=1,
+        hardware='default_hardware',
+        interfaces={}
+    )
+
+    vlans = {'default_vlan': default_vlan}
+    dps = {'default_dp': default_dp}
+    routers = {}
+
+    return Config(vlans=vlans, routers=routers, dps=dps)

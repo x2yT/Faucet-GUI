@@ -11,8 +11,10 @@ def create_vlans_tab(config):
         
         vlan_group = QWidget()
         # Create a QGroupBox with the VLAN name
-        vlan_groupbox = QGroupBox(name)
-        
+        vlan_groupbox = QGroupBox(name)        
+        # Set the font size and weight for the QGroupBox title
+        vlan_groupbox.setStyleSheet("QGroupBox { font-size: 12pt; font-weight: bold; }")
+
         # Create a QGridLayout for the VLAN details
         vlan_layout = QGridLayout()
         
@@ -115,7 +117,9 @@ def create_vlans_tab(config):
         row += 1
 
         # Add Static Routes group box
-        routes_groupbox = QGroupBox("Static Routes", vlan_groupbox)
+        routes_groupbox = QGroupBox("Static Routes", vlan_groupbox)        
+        # Set the font size and weight for the QGroupBox title
+        routes_groupbox.setStyleSheet("QGroupBox { font-size: 10pt; font-weight: bold; }")
         routes_layout = QGridLayout()
         routes_groupbox.setLayout(routes_layout)
         

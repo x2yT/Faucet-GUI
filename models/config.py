@@ -1,6 +1,5 @@
 class Config:
-    def __init__(self, include, vlans, routers, dps):
-        self.include = include
+    def __init__(self, vlans, routers, dps):
         self.vlans = vlans
         self.routers = routers
         self.dps = dps
