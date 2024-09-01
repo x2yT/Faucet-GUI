@@ -1,62 +1,95 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTabWidget
-from configfile.loader import load_config
+from configfile.loader import load_config, new_config
 from configfile.saver import save_config
 from gui.vlans_tab import create_vlans_tab
 from gui.routers_tab import create_routers_tab
 from gui.dps_tab import create_dps_tab
-#from models.vlan import Vlan  # Import the Vlan class
 
+# Define the main window class for the application
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        # Set the window title
         self.setWindowTitle("Faucet Configuration File - Graphical User Interface")
+        # Set the window geometry (position and size)
         self.setGeometry(100, 100, 900, 600)
         
+        # Create a tab widget to hold different configuration tabs
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
         
+        # Initialize the configuration attribute
         self.config = None
         
+        # Create the menu bar
         self.create_menu()
         
+    # Method to create the menu bar
     def create_menu(self):
+        # Add a "File" menu to the menu bar
         menu = self.menuBar().addMenu("File")
         
+        # Add "New" action to the "File" menu
+        new_action = menu.addAction("New")
+        new_action.triggered.connect(self.new_file)
+        
+        # Add "Open" action to the "File" menu
         open_action = menu.addAction("Open")
         open_action.triggered.connect(self.open_file)
         
+        # Add "Save" action to the "File" menu
         save_action = menu.addAction("Save")
         save_action.triggered.connect(self.save_file)
         
+    # Method to create a new configuration file
+    def new_file(self):
+        # Open a file dialog to get the file name for the new YAML file
+        file_name, _ = QFileDialog.getSaveFileName(self, "Create New YAML File", "", "YAML Files (*.yaml)")
+        if file_name:
+            # Create a new configuration
+            self.config = new_config()  # Call the function to get the config dictionary
+            # Save the default config to the specified file
+            ######## needs to be fixed ... save_config(self.config, file_name)
+            # Populate the tabs with the new configuration
+            self.populate_tabs()
+            # Update the window title with the new file name
+            self.setWindowTitle("Faucet GUI - " + file_name)
+        
+    # Method to open an existing configuration file
     def open_file(self):
+        # Open a file dialog to get the file name of the YAML file to open
         config_file_name, _ = QFileDialog.getOpenFileName(self, "Open YAML File", "", "YAML Files (*.yaml)")
         if config_file_name:
+            # Load the configuration from the specified file
             self.config = load_config(config_file_name)
+            # Populate the tabs with the loaded configuration
             self.populate_tabs()
+            # Update the window title with the opened file name
             self.setWindowTitle("Faucet GUI - " + config_file_name)
             
+    # Method to save the current configuration to a file
     def save_file(self):
         if self.config:
+            # Open a file dialog to get the file name to save the YAML file
             file_name, _ = QFileDialog.getSaveFileName(self, "Save YAML File", "", "YAML Files (*.yaml)")
             if file_name:
+                # Save the current configuration to the specified file
                 save_config(self.config, file_name)
                 
+    # Method to populate the tabs with the current configuration
     def populate_tabs(self):
+        # Clear any existing tabs
         self.tabs.clear()
 
-
+        # Create and add the VLANs tab
         vlans_tab = create_vlans_tab(self.config)
         self.tabs.addTab(vlans_tab, "VLANs")
 
+        # Create and add the Routers tab
         routers_tab = create_routers_tab(self.config)
         self.tabs.addTab(routers_tab, "Routers")
 
+        # Create and add the DPS tab
         dps_tab = create_dps_tab(self.config)
         self.tabs.addTab(dps_tab, "DPS")
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())

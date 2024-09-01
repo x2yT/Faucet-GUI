@@ -1,0 +1,25 @@
+dps:
+  default_dp:
+    dp_id: 1
+    interfaces: {}
+routers:
+  default_router:
+    faucet_vips: []
+    vlans:
+    - default_vlan
+vlans:
+  default_vlan:
+    acl_in: null
+    acls_in: []
+    description: Default VLAN
+    dot1x_assigned: false
+    faucet_mac: ''
+    faucet_vips: []
+    max_hosts: 0
+    minimum_ip_size_check: false
+    name: default
+    proactive_arp_limit: 0
+    proactive_nd_limit: 0
+    routes: []
+    targeted_gw_resolution: false
+    unicast_flood: false
