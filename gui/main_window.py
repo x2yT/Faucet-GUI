@@ -11,7 +11,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Faucet Configuration File - Graphical User Interface")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 900, 600)
         
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
