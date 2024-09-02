@@ -75,7 +75,8 @@ class MainWindow(QMainWindow):
             file_name, _ = QFileDialog.getSaveFileName(self, "Save YAML File", "", "YAML Files (*.yaml)")
             if file_name:
                 # Save the current configuration to the specified file
-                save_config(self.config, file_name)
+                # Note: Adjust the parameters as needed to save specific parts of the configuration
+                save_config(self.config, file_name, save_vlans=True, save_routers=False, save_dps=False)
                 
     # Method to populate the tabs with the current configuration
     def populate_tabs(self):
