@@ -12,6 +12,10 @@ vlans:
             - route:
                   ip_dst: '192.168.0.0/24'
                   ip_gw: '10.0.100.2'
+            - route:
+                  ip_dst: '24.56.78.99'
+                  ip_gw: '2.3.4.5'
+
     guest:
         vid: 200
         description: "guest network"
