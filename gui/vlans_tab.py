@@ -1,7 +1,8 @@
 # vlans_tab.py
 
-from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton
+from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton, QScrollArea
 
+from configfile.loader import new_config, Vlan  # Assuming new_config is imported from loader.py
 
 # Define a dialog class for adding routes
 class AddRouteDialog(QDialog):
@@ -70,16 +71,67 @@ def add_route(config, routes_groupbox, vlan_name):
             routes_groupbox.layout().addWidget(QLineEdit(ip_gw, routes_groupbox), route_row, 3)
 #________________________________________________________________________________________________
 
+# Function to refresh the VLAN tab
+def refresh_vlans_tab(config, vlans_layout, scroll_area):
+    # Clear the existing layout
+    for i in reversed(range(vlans_layout.count())):
+        widget = vlans_layout.itemAt(i).widget()
+        if widget is not None:
+            widget.setParent(None)
+
+    # Recreate the VLAN tab
+    create_vlans_tab(config, vlans_layout, scroll_area)
+
+
+
 # Create the VLAN tab
-def create_vlans_tab(config):
-    vlans_tab = QWidget()
-    vlans_layout = QVBoxLayout()
+def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
+    if vlans_layout is None:
+        vlans_tab = QWidget()
+        vlans_layout = QVBoxLayout()
+        vlans_tab.setLayout(vlans_layout)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(vlans_tab)
+    else:
+        vlans_tab = vlans_layout.parentWidget()
+
+    # Button to add a new VLAN
+    add_vlan_button = QPushButton("Add VLAN")
+    vlans_layout.addWidget(add_vlan_button)
+    # Slot function to add a new VLAN
+    def add_vlan():
+        # Create a new VLAN object with initial values
+        new_vlan_name = "New VLAN"
+        new_vlan = Vlan(
+            vid=1,
+            description='Default VLAN',
+            acls_in=[],
+            faucet_mac='',
+            faucet_vips=[],
+            routes=[],
+            acl_in=None,
+            dot1x_assigned=False,
+            max_hosts=255,
+            minimum_ip_size_check=True,
+            name='default',
+            proactive_arp_limit=2052,
+            proactive_nd_limit=2052,
+            targeted_gw_resolution=False,
+            unicast_flood=True
+        )
+        config.vlans[new_vlan_name] = new_vlan
+        # Refresh the VLAN tab
+        refresh_vlans_tab(config, vlans_layout, scroll_area)
+        # Scroll to the bottom
+        scroll_area.verticalScrollBar().setValue(scroll_area.verticalScrollBar().maximum())
+    # Connect the button click to the add_vlan slot
+    add_vlan_button.clicked.connect(add_vlan)
 
     # This function is used by the New Route dialog to reference the config for the data dictionary
     def create_add_route_handler(vlan_name, routes_groupbox):
         print('vlan_name='+ vlan_name)
         return lambda: add_route(config, routes_groupbox, vlan_name)
-
     # Slot function to update the VLAN key name
     def update_vlan_name(old_name, new_name, vlan_groupbox):
         if new_name and new_name != old_name:
