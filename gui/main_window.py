@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTabWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTabWidget, QScrollArea, QVBoxLayout, QWidget
 from configfile.loader import load_config, new_config
 from configfile.saver import save_config
 from gui.vlans_tab import create_vlans_tab
@@ -15,9 +15,21 @@ class MainWindow(QMainWindow):
         # Set the window geometry (position and size)
         self.setGeometry(100, 100, 900, 600)
         
+        # Create a central widget
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        # Create a vertical layout for the central widget
+        layout = QVBoxLayout(central_widget)
+        
+        # Create a scroll area
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        layout.addWidget(self.scroll_area)
+        
         # Create a tab widget to hold different configuration tabs
         self.tabs = QTabWidget()
-        self.setCentralWidget(self.tabs)
+        self.scroll_area.setWidget(self.tabs)
         
         # Initialize the configuration attribute
         self.config = None
@@ -75,7 +87,8 @@ class MainWindow(QMainWindow):
             file_name, _ = QFileDialog.getSaveFileName(self, "Save YAML File", "", "YAML Files (*.yaml)")
             if file_name:
                 # Save the current configuration to the specified file
-                save_config(self.config, file_name)
+                # Note: Adjust the parameters as needed to save specific parts of the configuration
+                save_config(self.config, file_name, save_vlans=True, save_routers=False, save_dps=False)
                 
     # Method to populate the tabs with the current configuration
     def populate_tabs(self):

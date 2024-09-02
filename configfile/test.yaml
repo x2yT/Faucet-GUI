@@ -1,0 +1,61 @@
+vlans:
+  Simon:
+    acl_in: null
+    acls_in:
+    - '123'
+    description: Default VLAN
+    dot1x_assigned: false
+    faucet_mac: ''
+    faucet_vips: []
+    max_hosts: 252
+    minimum_ip_size_check: true
+    name: default
+    proactive_arp_limit: 2050
+    proactive_nd_limit: 2050
+    routes: []
+    targeted_gw_resolution: false
+    unicast_flood: true
+    vid: 1
+  guest:
+    acl_in: null
+    acls_in: []
+    description: guest network
+    dot1x_assigned: false
+    faucet_mac: 0e:00:00:00:20:01
+    faucet_vips:
+    - 10.0.200.254/24
+    - 2001:200::1/64
+    - fe80::c00:00ff:fe00:2001/64
+    max_hosts: 255
+    minimum_ip_size_check: true
+    name: ''
+    proactive_arp_limit: 2052
+    proactive_nd_limit: 2052
+    routes: []
+    targeted_gw_resolution: false
+    unicast_flood: true
+    vid: 200
+  office:
+    acl_in: null
+    acls_in:
+    - office-vlan-protect
+    description: office network
+    dot1x_assigned: false
+    faucet_mac: 0e:00:00:00:10:01
+    faucet_vips:
+    - 10.0.100.254/24
+    - 2001:100::1/64
+    - fe80::c00:00ff:fe00:1001/64
+    max_hosts: 255
+    minimum_ip_size_check: true
+    name: ''
+    proactive_arp_limit: 2052
+    proactive_nd_limit: 2052
+    routes:
+    - ip_dst: 192.168.0.0/24
+      ip_gw: 10.0.100.2
+    - ip_dst: 24.56.78.99
+      ip_gw: 2.3.4.5
+    targeted_gw_resolution: false
+    unicast_flood: true
+    vid: 100

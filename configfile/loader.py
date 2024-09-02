@@ -6,6 +6,12 @@ from models.router import Router
 from models.dp import DP, Interface
 from models.config import Config
 
+
+# Custom exception for invalid YAML format
+class InvalidYAMLFormatError(Exception):
+    pass
+
+# Load the VLAN data from the config file
 def load_vlan(data):
     return Vlan(
         vid=data.get('vid'),
@@ -31,7 +37,7 @@ def load_vlan(data):
     )
 
 def load_router(data):
-    return Router(vlans=data['vlans'])
+    return Router(router=data['routers'])
 
 def load_interface(data):
     return Interface(
@@ -47,8 +53,13 @@ def load_dp(data):
     return DP(dp_id=data['dp_id'], hardware=data['hardware'], interfaces=interfaces)
 
 def load_config(yaml_file):
-    with open(yaml_file, 'r') as file:
-        data = yaml.safe_load(file)
+    try:
+        with open(yaml_file, 'r') as file:
+            data = yaml.safe_load(file)
+            if data is None:
+                raise InvalidYAMLFormatError("Faucet configuration file is empty or contains only comments")
+    except yaml.YAMLError as e:
+        raise InvalidYAMLFormatError(f"Invalid YAML format: {e}")
     
     vlans = {k: load_vlan(v) for k, v in data.get('vlans', {}).items()}
     routers = {k: load_router(v) for k, v in data.get('routers', {}).items()}
