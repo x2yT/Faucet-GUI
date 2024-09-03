@@ -1,10 +1,12 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTabWidget, QScrollArea, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTabWidget, QScrollArea, QVBoxLayout, QWidget, QMessageBox
 from configfile.loader import load_config, new_config
 from configfile.saver import save_config
 from gui.vlans_tab import create_vlans_tab
 from gui.routers_tab import create_routers_tab
 from gui.dps_tab import create_dps_tab
+
+import globals  # Import any global variables
 
 # Define the main window class for the application
 class MainWindow(QMainWindow):
@@ -89,6 +91,8 @@ class MainWindow(QMainWindow):
                 # Save the current configuration to the specified file
                 # Note: Adjust the parameters as needed to save specific parts of the configuration
                 save_config(self.config, file_name, save_vlans=True, save_routers=False, save_dps=False)
+                # Reset the unsaved changes flag
+                globals.unsaved_changes = False
                 
     # Method to populate the tabs with the current configuration
     def populate_tabs(self):
@@ -105,4 +109,14 @@ class MainWindow(QMainWindow):
 
         # Create and add the DPS tab
         dps_tab = create_dps_tab(self.config)
-        self.tabs.addTab(dps_tab, "DPS")
+        self.tabs.addTab(dps_tab, "DPS")  
+
+    def closeEvent(self, event):
+        # Check if any changes have been made and not saved
+        print("Unsaved Changes-" + str(globals.unsaved_changes))
+        if globals.unsaved_changes:
+            reply = QMessageBox.question(self, 'Unsaved Changes', 'You have unsaved changes. Are you sure you want to exit without saving?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.No:
+                event.ignore()
+                return
+        event.accept()

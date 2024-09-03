@@ -1,8 +1,8 @@
 # vlans_tab.py
 
-from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton, QScrollArea
-
+from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton, QScrollArea, QMessageBox
 from configfile.loader import new_config, Vlan  # Assuming new_config is imported from loader.py
+import globals
 
 # Define a dialog class for adding routes
 class AddRouteDialog(QDialog):
@@ -78,14 +78,12 @@ def refresh_vlans_tab(config, vlans_layout, scroll_area):
         widget = vlans_layout.itemAt(i).widget()
         if widget is not None:
             widget.setParent(None)
-
     # Recreate the VLAN tab
     create_vlans_tab(config, vlans_layout, scroll_area)
 
-
-
 # Create the VLAN tab
 def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
+
     if vlans_layout is None:
         vlans_tab = QWidget()
         vlans_layout = QVBoxLayout()
@@ -125,6 +123,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         refresh_vlans_tab(config, vlans_layout, scroll_area)
         # Scroll to the bottom
         scroll_area.verticalScrollBar().setValue(scroll_area.verticalScrollBar().maximum())
+        globals.unsaved_changes = True  # Mark as unsaved changes
     # Connect the button click to the add_vlan slot
     add_vlan_button.clicked.connect(add_vlan)
 
@@ -139,6 +138,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
             config.vlans[new_name] = config.vlans.pop(old_name)
             # Update the QGroupBox title
             vlan_groupbox.setTitle(new_name)
+            globals.unsaved_changes = True  # Mark as unsaved changes
 
     # Create a new Groupbox for each VLAN
     for name, vlan in config.vlans.items():
@@ -188,6 +188,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Slot function to update user changes back to vlan.acls_in
         def update_acls_in(text):
             vlan.acls_in = text.split(', ')
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the textChanged signal to the slot function
         acls_in_edit.textChanged.connect(update_acls_in)
 
@@ -196,8 +197,11 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         vlan_layout.addWidget(description_edit, row, 1, 1, 3)
         row += 1
         # Slot function to update vlan.acls_in with the description
-        def update_acls_in_with_description(text):
-            vlan.acls_in = [text]
+        def update_description(text):
+            vlan.description = [text]
+            globals.unsaved_changes = True  # Mark as unsaved changes
+            print("Unsaved Changed=" + str(globals.unsaved_changes))
+        description_edit.textChanged.connect(update_description)
         
         # Add a QCheckBox for dot1x_assigned
         vlan_layout.addWidget(QLabel("Dot1x Assigned:"), row, 0)
@@ -208,6 +212,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Slot function to update vlan.dot1x_assigned
         def update_dot1x_assigned(state):
             vlan.dot1x_assigned = bool(state)
+            globals.unsaved_changes = True  # Mark as unsaved changes
             print('dot1x=' + str(vlan.dot1x_assigned))
         # Connect the stateChanged signal to the slot function
         dot1x_checkbox.stateChanged.connect(update_dot1x_assigned)
@@ -225,9 +230,11 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Slot function to update vlan.faucet_vips
         def update_faucet_vips(text):
             vlan.faucet_vips = text.split(', ')
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Slot function to update vlan.faucet_mac
         def update_faucet_mac(text):
             vlan.faucet_mac = text
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the textChanged signals to the slot functions
         faucet_vips_edit.textChanged.connect(update_faucet_vips)
         faucet_mac_edit.textChanged.connect(update_faucet_mac)
@@ -243,6 +250,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Slot function to update vlan.max_hosts
         def update_max_hosts(value):
             vlan.max_hosts = value
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the valueChanged signal to the slot function
         max_hosts_spinbox.valueChanged.connect(update_max_hosts)
         
@@ -255,6 +263,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Slot function to update vlan.minimum_ip_size_check
         def update_minimum_ip_size_check(state):
             vlan.minimum_ip_size_check = bool(state)
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the stateChanged signal to the slot function
         minimum_ip_size_check_checkbox.stateChanged.connect(update_minimum_ip_size_check)     
        
@@ -275,9 +284,11 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Slot function to update vlan.proactive_arp_limit
         def update_proactive_arp_limit(value):
             vlan.proactive_arp_limit = value
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Slot function to update vlan.proactive_nd_limit
         def update_proactive_nd_limit(value):
             vlan.proactive_nd_limit = value
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the valueChanged signals to the slot functions
         proactive_arp_limit_spinbox.valueChanged.connect(update_proactive_arp_limit)
         proactive_nd_limit_spinbox.valueChanged.connect(update_proactive_nd_limit)
@@ -291,6 +302,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Slot function to update vlan.targeted_gw_resolution
         def update_targeted_gw_resolution(state):
             vlan.targeted_gw_resolution = bool(state)
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the stateChanged signal to the slot function
         targeted_gw_resolution_checkbox.stateChanged.connect(update_targeted_gw_resolution)
 
@@ -303,6 +315,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Slot function to update vlan.unicast_flood
         def update_unicast_flood(state):
             vlan.unicast_flood = bool(state)
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the stateChanged signal to the slot function
         unicast_flood_checkbox.stateChanged.connect(update_unicast_flood)
         
@@ -316,6 +329,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Slot function to update vlan.vid
         def update_vid(value):
             vlan.vid = value
+            globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the valueChanged signal to the slot function
         vid_spinbox.valueChanged.connect(update_vid)
 
@@ -336,17 +350,19 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         route_row += 1
 
         # Print the number of items in vlan.routes before populating widgets
-        print(f"Number of routes in vlan.routes before populating widgets: {len(vlan.routes)}")
+        ####print(f"Number of routes in vlan.routes before populating widgets: {len(vlan.routes)}")
 
         # Slot functions to update vlan.routes
         def update_ip_dst(vlan, index, text):
-            print('index=' + str(index))
-            print(f"Number of routes in vlan.routes before update: {len(vlan.routes)}")
+            ####print('index=' + str(index))
+            ####print(f"Number of routes in vlan.routes before update: {len(vlan.routes)}")
             vlan.routes[index]['ip_dst'] = text
-            print(f"Number of routes in vlan.routes after update: {len(vlan.routes)}")
+            globals.unsaved_changes = True  # Mark as unsaved changes
+            ####print(f"Number of routes in vlan.routes after update: {len(vlan.routes)}")
 
         def update_ip_gw(vlan, index, text):
             vlan.routes[index]['ip_gw'] = text
+            globals.unsaved_changes = True  # Mark as unsaved changes
 
         for index, route in enumerate(vlan.routes):
             print('enumerate index=' + str(index))
@@ -362,9 +378,25 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
 
             route_row += 1
 
-        print(f"Number of routes in vlan.routes after populating widgets: {len(vlan.routes)}")
+        ####print(f"Number of routes in vlan.routes after populating widgets: {len(vlan.routes)}")
         vlan_layout.addWidget(routes_groupbox, row, 0, 1, 4)
         row += 1
+
+        # Add the "Remove VLAN" button
+        remove_vlan_button = QPushButton("Remove VLAN")
+        vlan_layout.addWidget(remove_vlan_button, row, 0, 1, 2)
+        row += 1
+
+        # Slot function to remove the VLAN
+        def remove_vlan(vlan_name=name):
+            reply = QMessageBox.question(vlan_groupbox, 'Remove VLAN', 'Are you sure you want to remove this VLAN?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.Yes:
+                del config.vlans[vlan_name]
+                globals.unsaved_changes = True  # Mark as unsaved changes
+                refresh_vlans_tab(config, vlans_layout, scroll_area)
+
+        # Connect the button click to the remove_vlan slot
+        remove_vlan_button.clicked.connect(lambda _, vlan_name=name: remove_vlan(vlan_name))
 
         # Add the group box to the main layout
         vlans_layout.addWidget(vlan_groupbox)
