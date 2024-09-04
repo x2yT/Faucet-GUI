@@ -11,7 +11,7 @@ class Rule:
 
         # Print the rule_data dictionary to debug
         #print(f"Rule init rule_data type: {type(rule_data)}, content: {rule_data}")
-        print(f"rule_data: {rule_data}")
+        #print(f"rule_data: {rule_data}")
         for k, v in rule_data.items():
             print(f'k={k} v={v}')
         # Initialize attributes from the rule_data dictionary
@@ -23,7 +23,7 @@ class Rule:
         self.arp_tpa = rule_data.get('arp_tpa', None)
         self.dl_dst = rule_data.get('dl_dst', None)
         self.dl_src = rule_data.get('dl_src', None)
-        self.dl_type = self._get_dl_type(rule_data.get('dl_type', None))
+        self.dl_type = int(rule_data.get('dl_type', 0)) if rule_data.get('dl_type') is not None else None
         self.dl_vlan = rule_data.get('dl_vlan', None)
         self.dl_vlan_pcp = rule_data.get('dl_vlan_pcp', None)
         self.eth_dst = rule_data.get('eth_dst', None)
@@ -74,14 +74,6 @@ class Rule:
         
         # Print the contents of self.dl_type
         print(f"actions: {self.actions}")
-
-    # Displat the hexadecimal format for dl_type, e.g. 0x800 not 2048
-    def _get_dl_type(self, dl_type):
-        # Check if dl_type is a hexadecimal string and return it as a string
-        print('dl_type=' + str(dl_type))
-        if isinstance(dl_type, str) and dl_type.startswith('0x'):
-            return dl_type
-        return dl_type
 
 class Action:
     def __init__(self, action_data):
