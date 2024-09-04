@@ -1,15 +1,32 @@
 # loader.py
 
 import yaml
+import re
 from models.vlan import Vlan
 from models.router import Router
 from models.dp import DP, Interface
 from models.config import Config
+from models.acls import ACL, Rule
 
 
 # Custom exception for invalid YAML format
 class InvalidYAMLFormatError(Exception):
     pass
+
+# Constructor to handle hexadecimal values (need to display the hexadecimal) 
+def hex_int_constructor(loader, node):
+    value = loader.construct_scalar(node)
+    if value.startswith('0x'):
+        return value
+    try:
+        return int(value, 0)
+    except ValueError:
+        return value
+
+# Register the custom constructor for YAML
+hex_pattern = re.compile(r'^0x[0-9a-fA-F]+$')
+yaml.SafeLoader.add_implicit_resolver('!hex_int', hex_pattern, None)
+yaml.SafeLoader.add_constructor('!hex_int', hex_int_constructor)
 
 # Load the VLAN data from the config file
 def load_vlan(data):
@@ -52,6 +69,18 @@ def load_dp(data):
     interfaces = {k: load_interface(v) for k, v in data['interfaces'].items()}
     return DP(dp_id=data['dp_id'], hardware=data['hardware'], interfaces=interfaces)
 
+def load_acls(acls_data):
+    print(f"load acls acls_data type: {type(acls_data)}, content: {acls_data}")
+    acls = {}
+    if isinstance(acls_data, dict):
+        for acl_name, acl_rules in acls_data.items():
+            rules = [Rule(rule) for rule in acl_rules]
+            acls[acl_name] = ACL(name=acl_name, rules=rules)
+    else:
+        raise TypeError("Expected acls_data to be a dictionary")
+    return acls
+
+# load the selected faucet yaml configuration file
 def load_config(yaml_file):
     try:
         with open(yaml_file, 'r') as file:
@@ -64,8 +93,12 @@ def load_config(yaml_file):
     vlans = {k: load_vlan(v) for k, v in data.get('vlans', {}).items()}
     routers = {k: load_router(v) for k, v in data.get('routers', {}).items()}
     dps = {k: load_dp(v) for k, v in data.get('dps', {}).items()}
+    acls_data = data.get('acls', {})
+    #print(f"acls_data type: {type(acls_data)}, content: {acls_data}")
+    acls = load_acls(acls_data)
     
-    return Config(vlans=vlans, routers=routers, dps=dps)
+    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls)
+
 
 def new_config():
     default_vlan = Vlan(
