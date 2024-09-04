@@ -5,6 +5,7 @@ from configfile.saver import save_config
 from gui.vlans_tab import create_vlans_tab
 from gui.routers_tab import create_routers_tab
 from gui.dps_tab import create_dps_tab
+from gui.acls_tab import create_acls_tab
 
 import globals  # Import any global variables
 
@@ -15,7 +16,7 @@ class MainWindow(QMainWindow):
         # Set the window title
         self.setWindowTitle("Faucet Configuration File - Graphical User Interface")
         # Set the window geometry (position and size)
-        self.setGeometry(100, 100, 900, 600)
+        self.setGeometry(100, 100, 900, 800)
         
         # Create a central widget
         central_widget = QWidget()
@@ -110,6 +111,10 @@ class MainWindow(QMainWindow):
         # Create and add the DPS tab
         dps_tab = create_dps_tab(self.config)
         self.tabs.addTab(dps_tab, "DPS")  
+
+        # Create and add the ACLS tab
+        acls_tab = create_acls_tab(self.config)
+        self.tabs.addTab(acls_tab, "ACLS")  
 
     def closeEvent(self, event):
         # Check if any changes have been made and not saved
