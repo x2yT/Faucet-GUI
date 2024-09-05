@@ -12,8 +12,9 @@ class Rule:
         # Print the rule_data dictionary to debug
         #print(f"Rule init rule_data type: {type(rule_data)}, content: {rule_data}")
         #print(f"rule_data: {rule_data}")
-        for k, v in rule_data.items():
-            print(f'k={k} v={v}')
+        # for k, v in rule_data.items():
+        #     print(f'k={k} v={v}')
+        
         # Initialize attributes from the rule_data dictionary
         self.actset_output = rule_data.get('actset_output', None)
         self.arp_op = rule_data.get('arp_op', None)
