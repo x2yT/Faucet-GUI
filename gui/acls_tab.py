@@ -29,7 +29,9 @@ def create_acls_tab(config):
         row = 0  # Initialize row counter
 
         # Add a QLineEdit for the ACL name
-        acl_layout.addWidget(QLabel("ACL Name:"), row, 0)
+        acl_name_label = QLabel("ACL Name:")
+        acl_name_label.setStyleSheet("font-weight: bold;")
+        acl_layout.addWidget(acl_name_label, row, 0)
         acl_name_edit = create_line_edit(acl_name, acl_groupbox)
         acl_layout.addWidget(acl_name_edit, row, 1)
         row += 1
@@ -46,9 +48,12 @@ def create_acls_tab(config):
         # Connect the editingFinished signal to the update_acl_name slot
         acl_name_edit.editingFinished.connect(lambda old_name=acl_name, edit=acl_name_edit, groupbox=acl_groupbox: update_acl_name(old_name, edit.text(), groupbox))
 
+        rule_cnt = 0
         # Add ACL rules to the form
         for rule in acl.rules:
-            rule_label = QLabel("Rule:", alignment=Qt.AlignmentFlag.AlignTop)
+            rule_cnt += 1
+            rule_label = QLabel("Rule " + str(rule_cnt) + ":", alignment=Qt.AlignmentFlag.AlignTop)
+            rule_label.setStyleSheet("font-weight: bold;")
             rule_label.setFixedWidth(70)
             acl_layout.addWidget(rule_label, row, 0, alignment=Qt.AlignmentFlag.AlignTop)
 
@@ -60,45 +65,85 @@ def create_acls_tab(config):
 
             for key, value in rule.__dict__.items():
                 if value is not None:
+                    # Add the actions on the right of the groupbox
                     if key == 'actions':
+                        action_row = 0 # Row to display the action on
                         #rule_layout.addWidget(QLabel(f"{key}:"), 0, 4)
                         item_label = QLabel(f"{key}:")
+                        item_label.setStyleSheet("font-weight: bold;")
                         item_label.setFixedWidth(90)
-                        rule_layout.addWidget(item_label, 0, 3)
+                        rule_layout.addWidget(item_label, action_row, 3)
+                        action_row += 1
                         #rule_layout.addWidget(QLineEdit(str(value), rule_groupbox), 0, 4)
                         print(f"actions: {value}")
+                        # Display the actions details
                         for ak, av in value.items():
                             if ak == 'allow':
                                 value_checkbox = QCheckBox('allow', rule_groupbox)
                                 value_checkbox.setChecked(av)
-                                rule_layout.addWidget(value_checkbox, 1, 4)   
+                                rule_layout.addWidget(value_checkbox, action_row, 4)   
                             elif ak == 'force_port_vlan':
                                 value_checkbox = QCheckBox('force_port_vlan', rule_groupbox)
                                 value_checkbox.setChecked(av)
-                                rule_layout.addWidget(value_checkbox, 1, 4)     
+                                rule_layout.addWidget(value_checkbox, action_row, 4)     
                             elif ak == 'cookie':
                                 item_label = QLabel('cookie', rule_groupbox)
                                 item_label.setFixedWidth(90)
-                                rule_layout.addWidget(item_label, 1, 3)
+                                rule_layout.addWidget(item_label, action_row, 3)
                                 value_spinkbox = QSpinBox('cookie', rule_groupbox)
                                 value_spinkbox.setRange(0, 999999)
                                 value_spinkbox.setValue(av)
                                 value_spinkbox.setFixedWidth(90)    
-                                rule_layout.addWidget(value_spinkbox, 1, 4)     
+                                rule_layout.addWidget(value_spinkbox, action_row, 4)     
                             elif ak == 'meter':
                                 item_label = QLabel('meter', rule_groupbox)
                                 item_label.setFixedWidth(90)
-                                rule_layout.addWidget(item_label, 1, 3)
+                                rule_layout.addWidget(item_label, action_row, 3)
                                 value_edit = QLineEdit(str(av), rule_groupbox)
                                 value_edit.setFixedWidth(140)
-                                rule_layout.addWidget(value_edit, 1, 4)      
+                                rule_layout.addWidget(value_edit, action_row, 4)      
                             elif ak == 'mirror':
                                 item_label = QLabel('mirror', rule_groupbox)
                                 item_label.setFixedWidth(90)
-                                rule_layout.addWidget(item_label, 1, 3)
+                                rule_layout.addWidget(item_label, action_row, 3)
                                 value_edit = QLineEdit(str(av), rule_groupbox)
                                 value_edit.setFixedWidth(140)
-                                rule_layout.addWidget(value_edit, 1, 4)     
+                                rule_layout.addWidget(value_edit, action_row, 4)     
+                            # Output and ct actions are disctionaries of settings
+                            elif isinstance(av, dict):
+                                item_label = QLabel(ak, rule_groupbox)
+                                item_label.setFixedWidth(90)
+                                rule_layout.addWidget(item_label, action_row, 3)
+                                # Iterate the settings in the dictionary
+                                for ok, ov in av.items():
+                                    # Check if the setting is a list
+                                    if isinstance(ov, list):
+                                        item_label = QLabel(ok, rule_groupbox)
+                                        item_label.setFixedWidth(90)
+                                        rule_layout.addWidget(item_label, action_row, 4)
+                                        for lv in ov:
+                                            if isinstance(lv, dict):
+                                                for sfk, sfv in lv.items():
+                                                    item_label = QLabel(sfk, rule_groupbox)
+                                                    item_label.setFixedWidth(90)
+                                                    rule_layout.addWidget(item_label, action_row, 5)
+                                                    value_edit = QLineEdit(str(sfv), rule_groupbox)
+                                                    value_edit.setFixedWidth(120)
+                                                    rule_layout.addWidget(value_edit, action_row, 6)    
+                                                    action_row += 1
+                                            else:                                                
+                                                value_edit = QLineEdit(str(lv), rule_groupbox)
+                                                value_edit.setFixedWidth(90)
+                                                rule_layout.addWidget(value_edit, action_row, 5)     
+                                                action_row += 1                                        
+                                    else:
+                                        item_label = QLabel(ok, rule_groupbox)
+                                        item_label.setFixedWidth(90)
+                                        rule_layout.addWidget(item_label, action_row, 4)
+                                        value_edit = QLineEdit(str(ov), rule_groupbox)
+                                        value_edit.setFixedWidth(90)
+                                        rule_layout.addWidget(value_edit, action_row, 5)     
+                                        action_row += 1                                                  
                     else:
                         item_label = QLabel(f"{key}:", rule_groupbox)
                         item_label.setFixedWidth(90)
