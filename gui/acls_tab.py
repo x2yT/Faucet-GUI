@@ -1,20 +1,66 @@
 from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton, QScrollArea, QMessageBox, QDoubleSpinBox, QSpacerItem, QSizePolicy
 from PyQt6.QtCore import Qt
+from configfile.loader import new_config, ACL  # Assuming new_config is imported from loader.py
 import globals
 
-def create_acls_tab(config):
-    # Create the main widget for the acls_tab
-    acls_tab = QWidget()
-    acls_layout = QVBoxLayout(acls_tab)
-    # Create a new layout for the ACLs tab
-    #acls_layout = QVBoxLayout()
-    #acls_tab.setLayout(acls_layout)
+# Function to refresh the ACLS tab
+def refresh_acls_tab(config, acls_layout, scroll_area):
+    # Clear the existing layout
+    for i in reversed(range(acls_layout.count())):
+        widget = acls_layout.itemAt(i).widget()
+        if widget is not None:
+            widget.setParent(None)
+    # Recreate the ACLS tab
+    create_acls_tab(config, acls_layout, scroll_area)
+
+# Create the ACLS tab
+def create_acls_tab(config, acls_layout=None, scroll_area=None):
+    if acls_layout is None:
+        acls_tab = QWidget()
+        acls_layout = QVBoxLayout()
+        acls_tab.setLayout(acls_layout)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(acls_tab)
+    else:
+        acls_tab = acls_layout.parentWidget()
+
+    # Button to add a new ACL
+    add_acl_button = QPushButton("Add ACL")
+    acls_layout.addWidget(add_acl_button)
+    
+    # Slot function to add a new ACL
+    def add_acl():
+        # Create a new ACL dictionary with initial values
+        new_acl_name = "new acl"
+        new_acl = ACL(
+            name=new_acl_name,
+            rules={}
+        )
+        config.acls[new_acl_name] = new_acl
+        # Refresh the ACLS tab
+        refresh_acls_tab(config, acls_layout, scroll_area)
+        # Scroll to the bottom
+        scroll_area.verticalScrollBar().setValue(scroll_area.verticalScrollBar().maximum())
+        globals.unsaved_changes = True  # Mark as unsaved changes
+
+        # Show a dialog indicating the new ACL has been created
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.setText("Scroll to the bottom of the page to view the new ACL")
+        msg_box.setWindowTitle("New ACL created")
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.exec()
+
+    # Connect the button click to the add_acl slot
+    add_acl_button.clicked.connect(add_acl)
 
     # Function to create a QLineEdit with fixed width
     def create_line_edit(text, parent, width=200):
         line_edit = QLineEdit(text, parent)
         line_edit.setFixedWidth(width)  # Set fixed width
         return line_edit
+    #_____________________________________________________________________________________________
 
     # Iterate over the ACLs in the configuration
     for acl_name, acl in config.acls.items():
@@ -49,7 +95,7 @@ def create_acls_tab(config):
         acl_name_edit.editingFinished.connect(lambda old_name=acl_name, edit=acl_name_edit, groupbox=acl_groupbox: update_acl_name(old_name, edit.text(), groupbox))
 
         rule_cnt = 0
-        # Add ACL rules to the form
+        # Add ACL rules to the form________________________________________________________________________
         for rule in acl.rules:
             rule_cnt += 1
             rule_label = QLabel("Rule " + str(rule_cnt) + ":", alignment=Qt.AlignmentFlag.AlignTop)
@@ -74,8 +120,8 @@ def create_acls_tab(config):
                         item_label.setFixedWidth(90)
                         rule_layout.addWidget(item_label, action_row, 3)
                         action_row += 1
-                        #rule_layout.addWidget(QLineEdit(str(value), rule_groupbox), 0, 4)
-                        print(f"actions: {value}")
+                        #print(f"actions: {value}")
+
                         # Display the actions details
                         for ak, av in value.items():
                             if ak == 'allow':
@@ -148,7 +194,6 @@ def create_acls_tab(config):
                         item_label = QLabel(f"{key}:", rule_groupbox)
                         item_label.setFixedWidth(90)
                         rule_layout.addWidget(item_label, rule_row, 0)
-                        #rule_layout.addWidget(QLabel(f"{key}:"), rule_row, 0)
                         if isinstance(value, int):
                             value_edit = QSpinBox(rule_groupbox)
                             value_edit.setRange(0, 999999)
@@ -168,34 +213,32 @@ def create_acls_tab(config):
                             value_edit.setFixedWidth(140)
 
                         rule_layout.addWidget(value_edit, rule_row, 1)
-                        rule_row += 1
+                        rule_row += 1\
+
+                        # Slot function to update the rule value
+                        def update_rule_value(key, edit, rule_edited):
+                            if isinstance(edit, QSpinBox) or isinstance(edit, QDoubleSpinBox):
+                                print('update rule key=' + str(key) + ' value=' + str(edit.value()))
+                                setattr(rule_edited, key, edit.value())
+                            elif isinstance(edit, QCheckBox):
+                                setattr(rule_edited, key, edit.isChecked())
+                            else:
+                                setattr(rule_edited, key, edit.text())
+                            globals.unsaved_changes = True  # Mark as unsaved changes
+
+                        # Connect the appropriate signal to the update_rule_value slot
+                        if isinstance(value_edit, QSpinBox) or isinstance(value_edit, QDoubleSpinBox):
+                            print('isinstance check key=' + str(key))
+                            value_edit.valueChanged.connect(lambda _, key=key, edit=value_edit, rule=rule: update_rule_value(key, edit, rule))
+                        elif isinstance(value_edit, QCheckBox):
+                            value_edit.stateChanged.connect(lambda _, key=key, edit=value_edit, rule=rule: update_rule_value(key, edit, rule))
+                        else:
+                            value_edit.textChanged.connect(lambda _, key=key, edit=value_edit, rule=rule: update_rule_value(key, edit, rule))
 
                     if rule_row == 0:
                         rule_row = 3
 
-                    # Add a spacer item between columns 1 and 2
-                    # spacer = QSpacerItem(20, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-                    # rule_layout.addItem(spacer, 0, 2, rule_row, 1)
-
-                    # Slot function to update the rule value
-                    # def update_rule_value(key, edit):
-                    #     if isinstance(edit, QSpinBox) or isinstance(edit, QDoubleSpinBox):
-                    #         setattr(rule, key, edit.value())
-                    #     elif isinstance(edit, QCheckBox):
-                    #         setattr(rule, key, edit.isChecked())
-                    #     else:
-                    #         setattr(rule, key, edit.text())
-                    #     globals.unsaved_changes = True  # Mark as unsaved changes
-
-                    # Connect the appropriate signal to the update_rule_value slot
-                    # if isinstance(value_edit, QSpinBox) or isinstance(value_edit, QDoubleSpinBox):
-                    #     value_edit.valueChanged.connect(lambda key=key, edit=value_edit: update_rule_value(key, edit))
-                    # elif isinstance(value_edit, QCheckBox):
-                    #     value_edit.stateChanged.connect(lambda key=key, edit=value_edit: update_rule_value(key, edit))
-                    # else:
-                    #     value_edit.textChanged.connect(lambda key=key, edit=value_edit: update_rule_value(key, edit))
-
-            print('row=' + str(row) + ' rule_row=' + str(rule_row))
+            #print('row=' + str(row) + ' rule_row=' + str(rule_row))
             acl_layout.addWidget(rule_groupbox, row, 1, rule_row, 4)
             row += rule_row
 
