@@ -23,7 +23,7 @@ class Rule:
         self.arp_tpa = rule_data.get('arp_tpa', None)
         self.dl_dst = rule_data.get('dl_dst', None)
         self.dl_src = rule_data.get('dl_src', None)
-        self.dl_type = int(rule_data.get('dl_type', 0)) if rule_data.get('dl_type') is not None else None
+        self.dl_type = rule_data.get('dl_type', None)
         self.dl_vlan = rule_data.get('dl_vlan', None)
         self.dl_vlan_pcp = rule_data.get('dl_vlan_pcp', None)
         self.eth_dst = rule_data.get('eth_dst', None)
