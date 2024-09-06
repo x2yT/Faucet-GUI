@@ -140,6 +140,81 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
         button_box.rejected.connect(dialog.reject)
         print('dialog.exec')
         dialog.exec()
+
+    # Function to handle the "Edit Matches" button click
+    def edit_rule(rule):
+        dialog = QDialog()
+        dialog.setWindowTitle("Edit Rule")
+        dialog_layout = QVBoxLayout()
+        form_layout = QGridLayout()
+        fields = {}
+
+        attributes = [
+            ('actset_output', int), ('arp_op', int), ('arp_sha', str), ('arp_spa', str), ('arp_tpa', str),
+            ('arp_tha', str), ('dl_dst', str), ('dl_src', str), ('dl_type', int), ('dl_vlan', int),
+            ('dl_vlan_pcp', int), ('eth_dst', str), ('eth_src', str), ('eth_type', int), ('icmpv4_code', int),
+            ('icmpv4_type', int), ('icmpv6_code', int), ('icmpv6_type', int), ('in_phy_port', int), ('in_port', int),
+            ('ip_dscp', int), ('ip_ecn', int), ('ip_proto', int), ('ipv4_dst', str), ('ipv4_src', str),
+            ('ipv6_dst', str), ('ipv6_exthdr', str), ('ipv6_flabel', int), ('ipv6_nd_sll', str), ('ipv6_nd_target', str),
+            ('ipv6_nd_tll', str), ('ipv6_src', str), ('metadata', str), ('mpls_bos', int), ('mpls_label', int),
+            ('mpls_tc', int), ('nw_proto', int), ('nw_src', str), ('nw_dst', str), ('nw_tos', int),
+            ('packet_type', int), ('pbb_isid', str), ('pbb_uca', int), ('sctp_dst', int), ('sctp_src', int),
+            ('tcp_dst', int), ('tcp_flags', int), ('tcp_src', int), ('tp_dst', int), ('tp_src', int),
+            ('tunnel_id', str), ('udp_dst', int), ('udp_src', int), ('vlan_pcp', int), ('vlan_vid', int)
+        ]
+
+        # Add the fields to the dialog
+        row = 1
+        col = 0
+        for attr, attr_type in attributes:
+            label = QLabel(attr)
+            form_layout.addWidget(label, row, col)
+            col += 1
+            if attr_type == int:
+                field = QSpinBox()
+                field.setRange(0, 999999)
+                if attr in rule.__dict__ and rule.__dict__[attr] is not None:
+                    field.setValue(rule.__dict__[attr])
+                else:
+                    field.setValue(0)  # Set a default value if None
+            else:
+                field = QLineEdit()
+                if attr in rule.__dict__ and rule.__dict__[attr] is not None:
+                    field.setText(rule.__dict__[attr])
+            form_layout.addWidget(field, row, col)
+            col += 1
+            fields[attr] = field
+            if col == 8:
+                col = 0
+                row += 1
+
+        dialog_layout.addLayout(form_layout)
+
+        # Add OK and Cancel buttons
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        dialog_layout.addWidget(button_box)
+        dialog.setLayout(dialog_layout)
+
+        # Handle OK button click
+        def on_ok():
+            print('OK pressed....')
+            for attr, field in fields.items():
+                if isinstance(field, QSpinBox):
+                    value = field.value()
+                else:
+                    value = field.text()
+                if value:
+                    print('attr=' + attr + ' value=' + str(value))
+                    rule.__dict__[attr] = value
+            
+            refresh_acls_tab(config, acls_layout, scroll_area)
+            dialog.accept()
+
+        button_box.accepted.connect(on_ok)
+        button_box.rejected.connect(dialog.reject)
+        print('dialog.exec')
+        dialog.exec()
+
     #_____________________________________________________________________________________________
 
     # Iterate over the ACLs in the configuration
@@ -235,26 +310,56 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                 value_checkbox = QCheckBox('allow', rule_groupbox)
                                 value_checkbox.setChecked(av)
                                 rule_layout.addWidget(value_checkbox, action_row, 4)   
+                                action_row += 1
+
+                                def on_allow_checkbox_change(state, rule, ak):
+                                    print('ak=' + ak)
+                                    #setattr(rule, ak, bool(state))
+                                    rule.actions[ak] = bool(state)
+
+                                value_checkbox.stateChanged.connect(lambda state, rule=rule, ak=ak: on_allow_checkbox_change(state, rule, ak))
                             elif ak == 'force_port_vlan':
                                 value_checkbox = QCheckBox('force_port_vlan', rule_groupbox)
                                 value_checkbox.setChecked(av)
                                 rule_layout.addWidget(value_checkbox, action_row, 4)     
+                                action_row += 1
+
+                                def on_force_checkbox_change(state, rule, ak):
+                                    print('ak=' + ak)
+                                    #setattr(rule, ak, bool(state))
+                                    rule.actions[ak] = bool(state)
+
+                                value_checkbox.stateChanged.connect(lambda state, rule=rule, ak=ak: on_force_checkbox_change(state, rule, ak))
                             elif ak == 'cookie':
                                 item_label = QLabel('cookie', rule_groupbox)
                                 item_label.setFixedWidth(90)
                                 rule_layout.addWidget(item_label, action_row, 3)
-                                value_spinkbox = QSpinBox('cookie', rule_groupbox)
+                                value_spinkbox = QSpinBox(rule_groupbox)
                                 value_spinkbox.setRange(0, 999999)
                                 value_spinkbox.setValue(av)
                                 value_spinkbox.setFixedWidth(90)    
                                 rule_layout.addWidget(value_spinkbox, action_row, 4)     
+                                action_row += 1
+
+                                def on_value_spinkbox_change(value, rule, ak):
+                                    print('ak=' + ak)
+                                    rule.actions[ak] = value
+                                    
+                                value_spinkbox.valueChanged.connect(lambda value, rule=rule, ak=ak: on_value_spinkbox_change(value, rule, ak))
                             elif ak == 'meter':
                                 item_label = QLabel('meter', rule_groupbox)
                                 item_label.setFixedWidth(90)
                                 rule_layout.addWidget(item_label, action_row, 3)
-                                value_edit = QLineEdit(str(av), rule_groupbox)
-                                value_edit.setFixedWidth(140)
-                                rule_layout.addWidget(value_edit, action_row, 4)      
+                                meter_edit = QLineEdit(str(av), rule_groupbox)
+                                meter_edit.setFixedWidth(140)
+                                rule_layout.addWidget(meter_edit, action_row, 4)      
+                                action_row += 1
+
+                                def on_value_edit_change(text, rule, ak):
+                                    print('ak=' + ak)
+                                    rule.actions[ak] = text
+                                    
+                                meter_edit.textChanged.connect(lambda text, rule=rule, ak=ak: on_value_spinkbox_change(text, rule, ak))
                             elif ak == 'mirror':
                                 item_label = QLabel('mirror', rule_groupbox)
                                 item_label.setFixedWidth(90)
@@ -262,6 +367,13 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                 value_edit = QLineEdit(str(av), rule_groupbox)
                                 value_edit.setFixedWidth(140)
                                 rule_layout.addWidget(value_edit, action_row, 4)     
+                                action_row += 1
+
+                                def on_value_edit_change(text, rule, ak):
+                                    print('ak=' + ak)
+                                    rule.actions[ak] = text
+                                    
+                                value_edit.textChanged.connect(lambda text, rule=rule, ak=ak: on_value_spinkbox_change(text, rule, ak))
                             # Output and ct actions are disctionaries of settings
                             elif isinstance(av, dict):
                                 item_label = QLabel(ak, rule_groupbox)
@@ -288,7 +400,13 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                                 value_edit = QLineEdit(str(lv), rule_groupbox)
                                                 value_edit.setFixedWidth(90)
                                                 rule_layout.addWidget(value_edit, action_row, 5)     
-                                                action_row += 1                                        
+                                                action_row += 1               
+
+                                                def on_value_edit_change(text, ov, lv):
+                                                    print('lv=' + lv)
+                                                    ov[lv] = text
+                                                    
+                                                value_edit.textChanged.connect(lambda text, ov=ov, lv=lv: on_value_edit_change(text, ov, lv))                                    
                                     else:
                                         item_label = QLabel(ok, rule_groupbox)
                                         item_label.setFixedWidth(90)
@@ -296,7 +414,13 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                         value_edit = QLineEdit(str(ov), rule_groupbox)
                                         value_edit.setFixedWidth(90)
                                         rule_layout.addWidget(value_edit, action_row, 5)     
-                                        action_row += 1                                                  
+                                        action_row += 1            
+
+                                        def on_value_edit_change(text, av, ok):
+                                            print('ok=' + ok)
+                                            av[ok] = text
+                                            
+                                        value_edit.textChanged.connect(lambda text, av=av, ok=ok: on_value_edit_change(text, av, ok))                                      
                     else:
                         item_label = QLabel(f"{key}:", rule_groupbox)
                         item_label.setFixedWidth(90)
@@ -344,6 +468,16 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
 
                     if rule_row == 0:
                         rule_row = 3
+
+            # Add the "Edit Matches" button to the rule_groupbox
+            edit_button = QPushButton("Edit Matches")
+            rule_layout.addWidget(edit_button, rule_row, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft)
+            rule_row += 1
+
+            # Connect the "Edit Matches" button to the edit_rule function
+            edit_button.clicked.connect(lambda _, rule=rule: edit_rule(rule))
+            #edit_button.clicked.connect(lambda _, acl_name=acl_name, rules=acl.rules: add_rule(acl_name, rules))
+
 
             #print('row=' + str(row) + ' rule_row=' + str(rule_row))
             acl_layout.addWidget(rule_groupbox, row, 1, rule_row, 4)
