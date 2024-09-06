@@ -113,8 +113,14 @@ def new_config():
         interfaces={}
     )
 
+    default_acl = ACL(
+        name='New ACL',
+        rules=[]
+    )
+
     vlans = {'default_vlan': default_vlan}
     dps = {'default_dp': default_dp}
+    acls = {'default_acls': default_acl}
     routers = {}
 
-    return Config(vlans=vlans, routers=routers, dps=dps)
+    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls)
