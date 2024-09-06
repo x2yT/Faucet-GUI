@@ -2,6 +2,7 @@ import yaml
 from models.vlan import Vlan
 from models.router import Router
 from models.dp import DP
+from models.acls import ACL, Rule, Action, OutputAction, TunnelAction
 from models.config import Config
 
 # Custom representer for Vlan objects
@@ -46,13 +47,101 @@ def config_representer(dumper, data):
         'dps': data.dps
     })
 
+# Custom representer for ACL objects
+def acl_representer(dumper, data):
+    rules = [{'rule': rule} for rule in data.rules]
+    return dumper.represent_list(rules)
+
+# Custom representer for Rule objects
+def rule_representer(dumper, data):
+    # Create a dictionary of attributes and their values
+    attributes = {
+        'actions': data.actions,
+        'actset_output': getattr(data, 'actset_output', None),
+        'arp_op': getattr(data, 'arp_op', None),
+        'arp_sha': getattr(data, 'arp_sha', None),
+        'arp_spa': getattr(data, 'arp_spa', None),
+        'arp_tha': getattr(data, 'arp_tha', None),
+        'arp_tpa': getattr(data, 'arp_tpa', None),
+        'dl_dst': getattr(data, 'dl_dst', None),
+        'dl_src': getattr(data, 'dl_src', None),
+        'dl_type': getattr(data, 'dl_type', None),
+        'eth_dst': getattr(data, 'eth_dst', None),
+        'eth_src': getattr(data, 'eth_src', None),
+        'eth_type': getattr(data, 'eth_type', None),
+        'hard_timeout': getattr(data, 'hard_timeout', None),
+        'icmp_code': getattr(data, 'icmp_code', None),
+        'icmp_type': getattr(data, 'icmp_type', None),
+        'idle_timeout': getattr(data, 'idle_timeout', None),
+        'in_port': getattr(data, 'in_port', None),
+        'ip_dscp': getattr(data, 'ip_dscp', None),
+        'ip_ecn': getattr(data, 'ip_ecn', None),
+        'ip_proto': getattr(data, 'ip_proto', None),
+        'ipv4_dst': getattr(data, 'ipv4_dst', None),
+        'ipv4_src': getattr(data, 'ipv4_src', None),
+        'ipv6_dst': getattr(data, 'ipv6_dst', None),
+        'ipv6_src': getattr(data, 'ipv6_src', None),
+        'metadata': getattr(data, 'metadata', None),
+        'mpls_label': getattr(data, 'mpls_label', None),
+        'mpls_tc': getattr(data, 'mpls_tc', None),
+        'mpls_bos': getattr(data, 'mpls_bos', None),
+        'priority': getattr(data, 'priority', None),
+        'table_id': getattr(data, 'table_id', None),
+        'tcp_dst': getattr(data, 'tcp_dst', None),
+        'tcp_src': getattr(data, 'tcp_src', None),
+        'udp_dst': getattr(data, 'udp_dst', None),
+        'udp_src': getattr(data, 'udp_src', None),
+        'vlan_vid': getattr(data, 'vlan_vid', None),
+        'vlan_pcp': getattr(data, 'vlan_pcp', None)
+    }
+
+    # Filter out attributes with None values
+    filtered_attributes = {k: v for k, v in attributes.items() if v is not None}
+
+    # Represent the filtered dictionary
+    return dumper.represent_dict(filtered_attributes)
+
+# Custom representer for Action objects
+def action_representer(dumper, data):
+    return dumper.represent_dict({
+        'type': data.type,
+        'params': data.params
+    })
+
+# Custom representer for OutputAction objects
+def output_action_representer(dumper, data):
+    return dumper.represent_dict({
+        'port': data.port,
+        'ports': data.ports,
+        'pop_vlans': data.pop_vlans,
+        'vlan_vid': data.vlan_vid,
+        'swap_vid': data.swap_vid,
+        'vlan_vids': data.vlan_vids,
+        'failover': data.failover,
+        'tunnel': data.tunnel
+    })
+
+# Custom representer for TunnelAction objects
+def tunnel_action_representer(dumper, data):
+    return dumper.represent_dict({
+        'type': data.type,
+        'tunnel_id': data.tunnel_id,
+        'src_ip': data.src_ip,
+        'dst_ip': data.dst_ip
+    })
+
 # Register the custom representers with PyYAML
 yaml.add_representer(Vlan, vlan_representer)
 yaml.add_representer(Router, router_representer)
 yaml.add_representer(DP, dp_representer)
 yaml.add_representer(Config, config_representer)
+yaml.add_representer(ACL, acl_representer)
+yaml.add_representer(Rule, rule_representer)
+yaml.add_representer(Action, action_representer)
+yaml.add_representer(OutputAction, output_action_representer)
+yaml.add_representer(TunnelAction, tunnel_action_representer)
 
-def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=True):
+def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=True, save_acls=True):
     # Create a dictionary to hold the parts of the configuration to save
     data_to_save = {}
     
@@ -62,6 +151,8 @@ def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=
         data_to_save['routers'] = config.routers
     if save_dps:
         data_to_save['dps'] = config.dps
+    if save_acls:
+        data_to_save['acls'] = config.acls
 
     # Open the specified YAML file in write mode
     with open(yaml_file, 'w') as file:

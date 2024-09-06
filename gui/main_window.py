@@ -91,7 +91,7 @@ class MainWindow(QMainWindow):
             if file_name:
                 # Save the current configuration to the specified file
                 # Note: Adjust the parameters as needed to save specific parts of the configuration
-                save_config(self.config, file_name, save_vlans=True, save_routers=False, save_dps=False)
+                save_config(self.config, file_name, save_vlans=False, save_routers=False, save_dps=False, save_acls=True)
                 # Reset the unsaved changes flag
                 globals.unsaved_changes = False
                 
