@@ -248,6 +248,7 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
 
         # Placeholder for the dynamic widget
         dynamic_widget = None
+        output_widgets = {}
 
         def on_combo_box_change(index):
             nonlocal dynamic_widget
@@ -264,6 +265,15 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                 dynamic_widget.setRange(0, 999999)
             elif action_type in ['meter', 'mirror']:
                 dynamic_widget = QLineEdit(dialog)
+            elif action_type == 'output':
+                output_widgets.clear()  # Clear the dictionary instead of redefining it
+                for field in ['port', 'ports', 'pop_vlans', 'vlan_vid', 'swap_vid', 'vlan_vids', 'failover', 'tunnel']:
+                    label = QLabel(field, dialog)
+                    line_edit = QLineEdit(dialog)
+                    dynamic_layout.addWidget(label)
+                    dynamic_layout.addWidget(line_edit)
+                    output_widgets[field] = line_edit
+                    print('Total output widgets=' + str(len(output_widgets)))  # Print the length of the output_widgets dictionary
             if dynamic_widget:
                 dynamic_layout.addWidget(dynamic_widget)
 
@@ -271,14 +281,26 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
         on_combo_box_change(0)  # Initialize the first widget
 
         def on_ok_pressed():
+            print('reset OK pressed')
             rule.actions.clear()  # Clear the current actions entry
             action_type = combo_box.currentText()
-            if isinstance(dynamic_widget, QCheckBox):
+            if action_type == 'output':
+                print('Output type')
+                print('Total output widgets=' + str(len(output_widgets)))  # Print the length of the output_widgets dictionary
+                output_dict = {}
+                for field, widget in output_widgets.items():
+                    value = widget.text()
+                    print('field=' + field + ' value=' + str(value))
+                    if value:  # Only add non-empty values
+                        output_dict[field] = value
+                rule.actions[action_type] = output_dict
+            elif isinstance(dynamic_widget, QCheckBox):
                 rule.actions[action_type] = dynamic_widget.isChecked()
             elif isinstance(dynamic_widget, QSpinBox):
                 rule.actions[action_type] = dynamic_widget.value()
             elif isinstance(dynamic_widget, QLineEdit):
                 rule.actions[action_type] = dynamic_widget.text()
+            
             dialog.accept()
             # Redisplay the acls_tab
             refresh_acls_tab(config, acls_layout, scroll_area)
@@ -286,7 +308,7 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, dialog)
         main_layout.addWidget(button_box)
 
-        button_box.accepted.connect(on_ok_pressed)
+        button_box.accepted.connect(lambda: on_ok_pressed())
         button_box.rejected.connect(dialog.reject)
 
         dialog.exec()
