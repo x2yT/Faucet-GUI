@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton, QScrollArea, QMessageBox, QDoubleSpinBox, QSpacerItem, QSizePolicy, QDialogButtonBox
+from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton, QScrollArea, QMessageBox, QDoubleSpinBox, QSpacerItem, QSizePolicy, QDialogButtonBox, QComboBox
 from PyQt6.QtCore import Qt
 from configfile.loader import new_config, ACL, Rule  # Assuming new_config is imported from loader.py
 import globals
@@ -164,6 +164,8 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
         ]
 
         # Add the fields to the dialog
+        form_layout.addWidget(QLabel('Update or enter new match rule values below'))
+
         row = 1
         col = 0
         for attr, attr_type in attributes:
@@ -214,6 +216,81 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
         button_box.rejected.connect(dialog.reject)
         print('dialog.exec')
         dialog.exec()
+    
+    def delete_rule(acl, rule):
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("Delete Rule")
+        msg_box.setText("Press OK to delete the Rule")
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+        ret = msg_box.exec()
+
+        if ret == QMessageBox.StandardButton.Ok:
+            acl.rules.remove(rule)
+            # Redisplay the acls_tab
+            refresh_acls_tab(config, acls_layout, scroll_area)
+            #create_acls_tab(config)
+
+    def reset_action(rule):
+        dialog = QDialog()
+        dialog.setWindowTitle("Action Type Selection")
+        main_layout = QVBoxLayout(dialog)
+
+        # Add the fields to the dialog
+        main_layout.addWidget(QLabel('Select an Action type:'))
+
+        combo_box = QComboBox(dialog)
+        combo_box.addItems(['allow', 'cookie', 'ct', 'force_port_vlan', 'meter', 'mirror', 'output'])
+        main_layout.addWidget(combo_box)
+
+        # Layout for the dynamic widget
+        dynamic_layout = QVBoxLayout()
+        main_layout.addLayout(dynamic_layout)
+
+        # Placeholder for the dynamic widget
+        dynamic_widget = None
+
+        def on_combo_box_change(index):
+            nonlocal dynamic_widget
+            if dynamic_widget:
+                dynamic_layout.removeWidget(dynamic_widget)
+                dynamic_widget.deleteLater()
+                dynamic_widget = None
+
+            action_type = combo_box.currentText()
+            if action_type in ['allow', 'force_port_vlan']:
+                dynamic_widget = QCheckBox(action_type, dialog)
+            elif action_type == 'cookie':
+                dynamic_widget = QSpinBox(dialog)
+                dynamic_widget.setRange(0, 999999)
+            elif action_type in ['meter', 'mirror']:
+                dynamic_widget = QLineEdit(dialog)
+            if dynamic_widget:
+                dynamic_layout.addWidget(dynamic_widget)
+
+        combo_box.currentIndexChanged.connect(on_combo_box_change)
+        on_combo_box_change(0)  # Initialize the first widget
+
+        def on_ok_pressed():
+            rule.actions.clear()  # Clear the current actions entry
+            action_type = combo_box.currentText()
+            if isinstance(dynamic_widget, QCheckBox):
+                rule.actions[action_type] = dynamic_widget.isChecked()
+            elif isinstance(dynamic_widget, QSpinBox):
+                rule.actions[action_type] = dynamic_widget.value()
+            elif isinstance(dynamic_widget, QLineEdit):
+                rule.actions[action_type] = dynamic_widget.text()
+            dialog.accept()
+            # Redisplay the acls_tab
+            refresh_acls_tab(config, acls_layout, scroll_area)
+
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, dialog)
+        main_layout.addWidget(button_box)
+
+        button_box.accepted.connect(on_ok_pressed)
+        button_box.rejected.connect(dialog.reject)
+
+        dialog.exec()
+
 
     #_____________________________________________________________________________________________
 
@@ -290,6 +367,28 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
             acl_layout.addWidget(rule_groupbox, row, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
            
             rule_row = 0  # Initialize rule row counter
+
+            # Add the "Delete Rule" button to the rule_groupbox
+            delete_button = QPushButton("Delete Rule")
+            rule_layout.addWidget(delete_button, rule_row, 0, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+            
+            # Connect the "Delete Rule" button to the delete_rule function
+            delete_button.clicked.connect(lambda _, acl=acl, rule=rule: delete_rule(acl, rule))
+
+            # Add the "Edit Matches" button to the rule_groupbox
+            edit_button = QPushButton("Edit Matches")
+            rule_layout.addWidget(edit_button, rule_row, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+
+            # Connect the "Edit Matches" button to the edit_rule function
+            edit_button.clicked.connect(lambda _, rule=rule: edit_rule(rule))
+
+            # Add the "Reset Action" button to the rule_groupbox
+            reset_button = QPushButton("Reset Action")
+            rule_layout.addWidget(reset_button, rule_row, 4, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+            rule_row += 1
+ 
+            # Connect the "Reset Action" button to the reset_action function
+            reset_button.clicked.connect(lambda _, rule=rule: reset_action(rule))
 
             for key, value in rule.__dict__.items():
                 if value is not None:
@@ -390,23 +489,33 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                             if isinstance(lv, dict):
                                                 for sfk, sfv in lv.items():
                                                     item_label = QLabel(sfk, rule_groupbox)
+                                                    print('sfk=' + sfk)
                                                     item_label.setFixedWidth(90)
                                                     rule_layout.addWidget(item_label, action_row, 5)
                                                     value_edit = QLineEdit(str(sfv), rule_groupbox)
                                                     value_edit.setFixedWidth(120)
                                                     rule_layout.addWidget(value_edit, action_row, 6)    
-                                                    action_row += 1
+                                                    action_row += 1           
+
+                                                def on_value_edit_change_sfk(text, lv, sfk, sfv):
+                                                    print('sfk=' + sfk)
+                                                    lv[sfk] = text
+                                                    
+                                                value_edit.textChanged.connect(lambda text, lv=lv, sfk=sfk, sfv=sfv: on_value_edit_change_sfk(text, lv, sfk, sfv)) 
                                             else:                                                
                                                 value_edit = QLineEdit(str(lv), rule_groupbox)
                                                 value_edit.setFixedWidth(90)
                                                 rule_layout.addWidget(value_edit, action_row, 5)     
                                                 action_row += 1               
 
-                                                def on_value_edit_change(text, ov, lv):
-                                                    print('lv=' + lv)
-                                                    ov[lv] = text
+                                                def on_value_edit_change_lv(text, ov, lv):
+                                                    print('lv=' + str(lv))
+                                                    if isinstance(ov, list):
+                                                        ov[ov.index(lv)] = text
+                                                    else:
+                                                        ov[lv] = text
                                                     
-                                                value_edit.textChanged.connect(lambda text, ov=ov, lv=lv: on_value_edit_change(text, ov, lv))                                    
+                                                value_edit.textChanged.connect(lambda text, ov=ov, lv=lv: on_value_edit_change_lv(text, ov, lv))                                    
                                     else:
                                         item_label = QLabel(ok, rule_groupbox)
                                         item_label.setFixedWidth(90)
@@ -468,15 +577,6 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
 
                     if rule_row == 0:
                         rule_row = 3
-
-            # Add the "Edit Matches" button to the rule_groupbox
-            edit_button = QPushButton("Edit Matches")
-            rule_layout.addWidget(edit_button, rule_row, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft)
-            rule_row += 1
-
-            # Connect the "Edit Matches" button to the edit_rule function
-            edit_button.clicked.connect(lambda _, rule=rule: edit_rule(rule))
-            #edit_button.clicked.connect(lambda _, acl_name=acl_name, rules=acl.rules: add_rule(acl_name, rules))
 
 
             #print('row=' + str(row) + ' rule_row=' + str(rule_row))
