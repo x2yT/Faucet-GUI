@@ -41,15 +41,18 @@ def load_router(data):
     return Router(router=data['routers'])
 
 def load_interface(data):
-    lldp_beacon = data.get('lldp_beacon', {})
-    lldp_beacon_org_tlvs = [
-        {
-            'info': tlv.get('info'),
-            'oui': tlv.get('oui'),
-            'subtype': tlv.get('subtype')
-        } for tlv in lldp_beacon.get('org_tlvs', [])
-    ]
-    lldp_beacon['org_tlvs'] = lldp_beacon_org_tlvs
+    lldp_beacon = data.get('lldp_beacon', None)  # Set to None if not provided
+    lldp_beacon_org_tlvs = []
+
+    if lldp_beacon:
+        lldp_beacon_org_tlvs = [
+            {
+                'info': tlv.get('info'),
+                'oui': tlv.get('oui'),
+                'subtype': tlv.get('subtype')
+            } for tlv in lldp_beacon.get('org_tlvs', [])
+        ]
+        lldp_beacon['org_tlvs'] = lldp_beacon_org_tlvs
 
     stack = data.get('stack', {})
 
