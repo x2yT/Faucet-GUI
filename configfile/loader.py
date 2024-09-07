@@ -41,17 +41,88 @@ def load_router(data):
     return Router(router=data['routers'])
 
 def load_interface(data):
+    lldp_beacon = data.get('lldp_beacon', {})
+    lldp_beacon_org_tlvs = [
+        {
+            'info': tlv.get('info'),
+            'oui': tlv.get('oui'),
+            'subtype': tlv.get('subtype')
+        } for tlv in lldp_beacon.get('org_tlvs', [])
+    ]
+    lldp_beacon['org_tlvs'] = lldp_beacon_org_tlvs
+
+    stack = data.get('stack', {})
+
     return Interface(
         name=data['name'],
         description=data['description'],
         native_vlan=data.get('native_vlan'),
         tagged_vlans=data.get('tagged_vlans', []),
-        acls_in=data.get('acls_in', [])
+        acls_in=data.get('acls_in', []),
+        acl_in=data.get('acl_in'),
+        dot1x=data.get('dot1x'),
+        dot1x_acl=data.get('dot1x_acl'),
+        dot1x_mab=data.get('dot1x_mab'),
+        enabled=data.get('enabled'),
+        hairpin=data.get('hairpin'),
+        lldp_beacon=lldp_beacon,
+        loop_protect=data.get('loop_protect'),
+        loop_protect_external=data.get('loop_protect_external'),
+        max_hosts=data.get('max_hosts'),
+        mirror=data.get('mirror', []),
+        number=data.get('number'),
+        opstatus_reconf=data.get('opstatus_reconf'),
+        output_only=data.get('output_only'),
+        permanent_learn=data.get('permanent_learn'),
+        stack=stack,
+        unicast_flood=data.get('unicast_flood'),
+        restricted_bcast_arpnd=data.get('restricted_bcast_arpnd'),
+        coprocessor=data.get('coprocessor')
     )
 
 def load_dp(data):
     interfaces = {k: load_interface(v) for k, v in data['interfaces'].items()}
-    return DP(dp_id=data['dp_id'], hardware=data['hardware'], interfaces=interfaces)
+    lldp_beacon = data.get('lldp_beacon', {})
+    stack = data.get('stack', {})
+
+    return DP(
+        dp_id=data['dp_id'],
+        hardware=data['hardware'],
+        interfaces=interfaces,
+        advertise_interval=data.get('advertise_interval'),
+        arp_neighbor_timeout=data.get('arp_neighbor_timeout'),
+        description=data.get('description'),
+        dot1x=data.get('dot1x'),
+        drop_broadcast_source_address=data.get('drop_broadcast_source_address'),
+        drop_spoofed_faucet_mac=data.get('drop_spoofed_faucet_mac'),
+        group_table=data.get('group_table'),
+        high_priority=data.get('high_priority'),
+        highest_priority=data.get('highest_priority'),
+        ignore_learn_ins=data.get('ignore_learn_ins'),
+        interface_ranges=data.get('interface_ranges'),
+        learn_ban_timeout=data.get('learn_ban_timeout'),
+        learn_jitter=data.get('learn_jitter'),
+        lldp_beacon=lldp_beacon,
+        low_priority=data.get('low_priority'),
+        lowest_priority=data.get('lowest_priority'),
+        max_host_fib_retry_count=data.get('max_host_fib_retry_count'),
+        max_hosts_per_resolve_cycle=data.get('max_hosts_per_resolve_cycle'),
+        max_resolve_backoff_time=data.get('max_resolve_backoff_time'),
+        metrics_rate_limit_sec=data.get('metrics_rate_limit_sec'),
+        name=data.get('name'),
+        ofchannel_log=data.get('ofchannel_log'),
+        packetin_pps=data.get('packetin_pps'),
+        slowpath_pps=data.get('slowpath_pps'),
+        priority_offset=data.get('priority_offset'),
+        proactive_learn_v4=data.get('proactive_learn_v4'),
+        proactive_learn_v6=data.get('proactive_learn_v6'),
+        stack=stack,
+        timeout=data.get('timeout'),
+        use_idle_timeout=data.get('use_idle_timeout'),
+        table_sizes=data.get('table_sizes'),
+        port_table_scale_factor=data.get('port_table_scale_factor'),
+        global_vlan=data.get('global_vlan')
+    )
 
 def load_acls(acls_data):
     print(f"load acls acls_data type: {type(acls_data)}, content: {acls_data}")
