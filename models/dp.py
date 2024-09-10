@@ -45,9 +45,9 @@ class Interface:
         #     self.lldp_beacon_system_name = None
 
 class DP:
-    def __init__(self, dp_id, hardware, interfaces, **kwargs):
-        self.dp_id = dp_id
-        self.hardware = hardware
+    def __init__(self, interfaces, **kwargs):
+        self.dp_id = kwargs.get('dp_id', None)
+        self.hardware = kwargs.get('hardware', None)
         self.advertise_interval = kwargs.get('advertise_interval', None)
         self.arp_neighbor_timeout = kwargs.get('arp_neighbor_timeout', None)
         self.description = kwargs.get('description', None)

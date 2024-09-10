@@ -90,8 +90,8 @@ def load_dp(data):
     stack = data.get('stack', {})
 
     return DP(
-        dp_id=data['dp_id'],
-        hardware=data['hardware'],
+        dp_id=data.get('dp_id'),
+        hardware=data.get('hardware'),
         advertise_interval=data.get('advertise_interval'),
         arp_neighbor_timeout=data.get('arp_neighbor_timeout'),
         description=data.get('description'),

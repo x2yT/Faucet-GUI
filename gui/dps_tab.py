@@ -3,16 +3,132 @@ from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit,
 from PyQt6.QtCore import Qt
 from configfile.loader import new_config, ACL, Rule  # Assuming new_config is imported from loader.py
 import globals
+from models.dp import DP
 
-def create_dps_tab(config):
-    dps_tab = QWidget()
-    dps_layout = QVBoxLayout()
+def refresh_dps_tab(config, dps_layout):
+    # Clear the existing layout
+    print('refresh_dps_tab ...')
+    for i in reversed(range(dps_layout.count())):
+        widget = dps_layout.itemAt(i).widget()
+        if widget is not None:
+            widget.setParent(None)
+    # Recreate the DPS tab
+    create_dps_tab(config, dps_layout)
 
+def add_dp(config, dps_tab, dps_layout):
+    dialog = QDialog()
+    dialog.setWindowTitle("Add DP")
+    dialog_layout = QVBoxLayout()
+    form_layout = QGridLayout()
+
+    fields = {
+        'name': QLineEdit(),
+        'advertise_interval': QSpinBox(),
+        'arp_neighbor_timeout': QSpinBox(),
+        'description': QLineEdit(),
+        'dp_id': QSpinBox(),
+        'drop_broadcast_source_address': QCheckBox(),
+        'drop_spoofed_faucet_mac': QCheckBox(),
+        'global_vlan': QSpinBox(),
+        'group_table': QCheckBox(),
+        'hardware': QLineEdit(),
+        'high_priority': QSpinBox(),
+        'highest_priority': QSpinBox(),
+        'ignore_learn_ins': QSpinBox(),
+        'learn_ban_timeout': QSpinBox(),
+        'learn_jitter': QSpinBox(),
+        'low_priority': QSpinBox(),
+        'lowest_priority': QSpinBox(),
+        'max_host_fib_retry_count': QSpinBox(),
+        'max_hosts_per_resolve_cycle': QSpinBox(),
+        'max_resolve_backoff_time': QSpinBox(),
+        'metrics_rate_limit_sec': QSpinBox(),
+        'ofchannel_log': QLineEdit(),
+        'packetin_pps': QSpinBox(),
+        'port_table_scale_factor': QDoubleSpinBox(),
+        'priority_offset': QSpinBox(),
+        'proactive_learn_v4': QCheckBox(),
+        'proactive_learn_v6': QCheckBox(),
+        'slowpath_pps': QSpinBox(),
+        'table_sizes': QLineEdit(),  # Assuming table_sizes is a JSON string
+        'timeout': QSpinBox(),
+        'use_idle_timeout': QCheckBox()
+    }
+
+    # Add the fields to the dialog
+    row = 1
+    col = 0
+    for field, widget in fields.items():
+        label = QLabel(field)
+        form_layout.addWidget(label, row, col)
+        form_layout.addWidget(widget, row, col + 1)
+        col += 2
+        if col == 4:
+            col = 0
+            row += 1
+
+    dialog_layout.addLayout(form_layout)
+
+    # Add OK and Cancel buttons
+    button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    dialog_layout.addWidget(button_box)
+    dialog.setLayout(dialog_layout)
+
+    # Handle OK button click
+    def on_ok():
+        dp_data = {}
+        for field, widget in fields.items():
+            if isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
+                if widget.value() != 0:  # Only add if value is not zero
+                    dp_data[field] = widget.value()
+            elif isinstance(widget, QCheckBox):
+                if widget.isChecked():  # Only add if checkbox is checked
+                    dp_data[field] = widget.isChecked()
+            else:
+                if widget.text():  # Only add if text is not empty
+                    dp_data[field] = widget.text()
+        dp_data['interfaces'] = {}
+        new_dp = DP(**dp_data)
+        config.dps[new_dp.name] = new_dp
+        globals.unsaved_changes = True
+        refresh_dps_tab(config, dps_layout)
+        dialog.accept()
+
+        # Show a dialog indicating the new ACL has been created
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.setText("Scroll to the bottom of the page to view the new DP")
+        msg_box.setWindowTitle("New DP created")
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.exec()
+
+    button_box.accepted.connect(on_ok)
+    button_box.rejected.connect(dialog.reject)
+    dialog.exec()
+
+# Create the DPS tab.................
+def create_dps_tab(config, dps_layout=None):
+    if dps_layout is None:
+        print('layout is none')
+        dps_tab = QWidget()
+        dps_layout = QVBoxLayout()
+        dps_tab.setLayout(dps_layout)
+    else:
+        print('using parent widget')
+        dps_tab = dps_layout.parentWidget()
+
+    # For each DP in DPS
     for name, dp in config.dps.items():
         group_box = QGroupBox(f"{name}")
         group_box.setStyleSheet("QGroupBox { font-size: 12pt; font-weight: bold; }")
         group_box.setFixedWidth(800)  # Set a fixed width for the group box
         grid_layout = QGridLayout()
+
+        # Add DP button
+        add_dp_button = QPushButton("Add DP")
+        add_dp_button.setFixedWidth(200)
+        add_dp_button.clicked.connect(lambda: add_dp(config, dps_tab, dps_layout))
+        dps_layout.addWidget(add_dp_button)
 
         # Add QLineEdit for DP name
         name_label = QLabel("DP Name")
@@ -23,12 +139,31 @@ def create_dps_tab(config):
         name_edit.textChanged.connect(lambda text, gb=group_box: gb.setTitle(text))
         grid_layout.addWidget(name_label, 0, 0)
         grid_layout.addWidget(name_edit, 0, 1)
+        
+        # Functions to update the DP dictionary if user makes an edit
+        def update_dp_bool(dp, attr, state):
+            dp.__dict__[attr] = bool(state)
+            globals.unsaved_changes = True
+
+        def update_dp_int(dp, attr, value):
+            dp.__dict__[attr] = int(value)
+            globals.unsaved_changes = True
+
+        def update_dp_float(dp, attr, value):
+            dp.__dict__[attr] = float(value)
+            globals.unsaved_changes = True
+
+        def update_dp_str(dp, attr, text):
+            dp.__dict__[attr] = text
+            globals.unsaved_changes = True
 
         row = 1
-        col = 0
+        col = 0        
+        # For each attribute in the DP
         for attr, value in dp.__dict__.items():
             if value is not None and value != [] and value != {}:
                 print('attr=' + attr, type(value))
+                # Handle the DP dictionary attributes in their own sub-groupboxes
                 if attr == 'interfaces' and isinstance(value, dict):
                     row += 1
                     interfaces_label = QLabel("Interfaces")
@@ -118,6 +253,26 @@ def create_dps_tab(config):
                                 if iface_col >= 4:  # Move to next row after 2 attributes
                                     iface_col = 0
                                     iface_row += 1
+
+                                # Slot function to update the iface value
+                                def update_iface_value(iface_attr, iface_widget, iface):
+                                    print('Updating=' + iface_attr)
+                                    if isinstance(iface_widget, QSpinBox) or isinstance(iface_widget, QDoubleSpinBox):
+                                        setattr(iface, iface_attr, iface_widget.value())
+                                    elif isinstance(iface_widget, QCheckBox):
+                                        setattr(iface, iface_attr, iface_widget.isChecked())
+                                    else:
+                                        setattr(iface, iface_attr, iface_widget.text())
+                                    print('Setting unsaved = True')
+                                    globals.unsaved_changes = True  # Mark as unsaved changes
+
+                                # Connect the appropriate signal to the update_iface_value slot
+                                if isinstance(iface_widget, QSpinBox) or isinstance(iface_widget, QDoubleSpinBox):
+                                    iface_widget.valueChanged.connect(lambda _, iface_attr=iface_attr, iface_widget=iface_widget, iface=iface: update_iface_value(iface_attr, iface_widget, iface))
+                                elif isinstance(iface_widget, QCheckBox):
+                                    iface_widget.stateChanged.connect(lambda _, iface_attr=iface_attr, iface_widget=iface_widget, iface=iface: update_iface_value(iface_attr, iface_widget, iface))
+                                else:
+                                    iface_widget.textChanged.connect(lambda _, iface_attr=iface_attr, iface_widget=iface_widget, iface=iface: update_iface_value(iface_attr, iface_widget, iface))
 
                         iface_group_box.setLayout(iface_layout)
                         grid_layout.addWidget(iface_group_box, row, 1, 1, 3)
@@ -265,17 +420,21 @@ def create_dps_tab(config):
                     if isinstance(value, bool):
                         widget = QCheckBox()
                         widget.setChecked(value)
+                        widget.stateChanged.connect(lambda state, dp=dp, a=attr: update_dp_bool(dp, a, state))
                     elif isinstance(value, int):
                         widget = QSpinBox()
                         widget.setValue(value)
+                        widget.valueChanged.connect(lambda val, dp=dp, a=attr: update_dp_int(dp, a, val))
                     elif isinstance(value, float):
                         widget = QDoubleSpinBox()
                         widget.setValue(value)
                         widget.setMaximumWidth(200)
+                        widget.valueChanged.connect(lambda val, dp=dp, a=attr: update_dp_float(dp, a, val))
                     elif isinstance(value, str):
                         widget = QLineEdit()
                         widget.setText(value)
                         widget.setFixedWidth(200)
+                        widget.textChanged.connect(lambda text, dp=dp, a=attr: update_dp_str(dp, a, text))
                     else:
                         widget = QLabel(str(value))  # Fallback for other types
 
