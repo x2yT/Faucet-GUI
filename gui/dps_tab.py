@@ -106,6 +106,115 @@ def add_dp(config, dps_tab, dps_layout):
     button_box.rejected.connect(dialog.reject)
     dialog.exec()
 
+def edit_dp(config, dp, dps_layout):
+    dialog = QDialog()
+    dialog.setWindowTitle("Edit DP")
+    dialog_layout = QVBoxLayout()
+    form_layout = QGridLayout()
+
+    fields = {
+        'name': QLineEdit(),
+        'advertise_interval': QSpinBox(),
+        'arp_neighbor_timeout': QSpinBox(),
+        'description': QLineEdit(),
+        'dp_id': QSpinBox(),
+        'drop_broadcast_source_address': QCheckBox(),
+        'drop_spoofed_faucet_mac': QCheckBox(),
+        'global_vlan': QSpinBox(),
+        'group_table': QCheckBox(),
+        'hardware': QLineEdit(),
+        'high_priority': QSpinBox(),
+        'highest_priority': QSpinBox(),
+        'ignore_learn_ins': QSpinBox(),
+        'learn_ban_timeout': QSpinBox(),
+        'learn_jitter': QSpinBox(),
+        'low_priority': QSpinBox(),
+        'lowest_priority': QSpinBox(),
+        'max_host_fib_retry_count': QSpinBox(),
+        'max_hosts_per_resolve_cycle': QSpinBox(),
+        'max_resolve_backoff_time': QSpinBox(),
+        'metrics_rate_limit_sec': QSpinBox(),
+        'ofchannel_log': QLineEdit(),
+        'packetin_pps': QSpinBox(),
+        'port_table_scale_factor': QDoubleSpinBox(),
+        'priority_offset': QSpinBox(),
+        'proactive_learn_v4': QCheckBox(),
+        'proactive_learn_v6': QCheckBox(),
+        'slowpath_pps': QSpinBox(),
+        'table_sizes': QLineEdit(),  # Assuming table_sizes is a JSON string
+        'timeout': QSpinBox(),
+        'use_idle_timeout': QCheckBox()
+    }
+
+    # Populate the fields with the current DP values
+    for field, widget in fields.items():
+        if hasattr(dp, field):
+            value = getattr(dp, field)
+            if value is None:
+                if isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
+                    value = 0
+                elif isinstance(widget, QCheckBox):
+                    value = False
+                else:
+                    value = ""
+
+            if isinstance(widget, QLineEdit):
+                widget.setText(str(value))
+            elif isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
+                widget.setValue(value)
+            elif isinstance(widget, QCheckBox):
+                widget.setChecked(value)
+
+
+    # Add the fields to the dialog
+    row = 1
+    col = 0
+    for field, widget in fields.items():
+        label = QLabel(field)
+        form_layout.addWidget(label, row, col)
+        form_layout.addWidget(widget, row, col + 1)
+        col += 2
+        if col >= 4:  # Move to next row after 2 attributes
+            col = 0
+            row += 1
+
+    dialog_layout.addLayout(form_layout)
+
+    # Add OK and Cancel buttons
+    button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    button_box.accepted.connect(lambda: save_dp_changes(dialog, fields, dp, config, dps_layout))
+    button_box.rejected.connect(dialog.reject)
+    dialog_layout.addWidget(button_box)
+
+    dialog.setLayout(dialog_layout)
+    dialog.exec()
+
+def save_dp_changes(dialog, fields, dp, config, dps_layout):
+    changes_made = False
+
+    for field, widget in fields.items():
+        if isinstance(widget, QLineEdit):
+            new_value = widget.text()
+            if hasattr(dp, field) and getattr(dp, field) != new_value:
+                setattr(dp, field, new_value)
+                changes_made = True
+        elif isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
+            new_value = widget.value()
+            if hasattr(dp, field) and getattr(dp, field) != new_value:
+                setattr(dp, field, new_value)
+                changes_made = True
+        elif isinstance(widget, QCheckBox):
+            new_value = widget.isChecked()
+            if hasattr(dp, field) and getattr(dp, field) != new_value:
+                setattr(dp, field, new_value)
+                changes_made = True
+
+    if changes_made:
+        globals.unsaved_changes = True
+
+    dialog.accept()
+    refresh_dps_tab(config, dps_layout)
+
 # Create the DPS tab.................
 def create_dps_tab(config, dps_layout=None):
     if dps_layout is None:
@@ -130,6 +239,11 @@ def create_dps_tab(config, dps_layout=None):
         add_dp_button.clicked.connect(lambda: add_dp(config, dps_tab, dps_layout))
         dps_layout.addWidget(add_dp_button)
 
+        # Add the edit_dp button
+        edit_dp_button = QPushButton("Edit DP")
+        edit_dp_button.clicked.connect(lambda _, dp=dp: edit_dp(config, dp, dps_layout))
+        grid_layout.addWidget(edit_dp_button, 0, 0, 1, 2)  # Add the button to the top row
+
         # Add QLineEdit for DP name
         name_label = QLabel("DP Name")
         name_label.setStyleSheet("font-weight: bold;")
@@ -137,8 +251,8 @@ def create_dps_tab(config, dps_layout=None):
         name_edit = QLineEdit(name)
         name_edit.setFixedWidth(200)
         name_edit.textChanged.connect(lambda text, gb=group_box: gb.setTitle(text))
-        grid_layout.addWidget(name_label, 0, 0)
-        grid_layout.addWidget(name_edit, 0, 1)
+        grid_layout.addWidget(name_label, 1, 0)
+        grid_layout.addWidget(name_edit, 1, 1)
         
         # Functions to update the DP dictionary if user makes an edit
         def update_dp_bool(dp, attr, state):
@@ -157,7 +271,7 @@ def create_dps_tab(config, dps_layout=None):
             dp.__dict__[attr] = text
             globals.unsaved_changes = True
 
-        row = 1
+        row = 2
         col = 0        
         # For each attribute in the DP
         for attr, value in dp.__dict__.items():
@@ -212,24 +326,30 @@ def create_dps_tab(config, dps_layout=None):
                                         if isinstance(lldp_value, bool):
                                             lldp_widget = QCheckBox()
                                             lldp_widget.setChecked(lldp_value)
+                                            lldp_widget.stateChanged.connect(lambda state, iface_value=iface_value, a=lldp_attr: update_lldp_bool(iface_value, a, state))
                                         elif isinstance(lldp_value, int):
                                             lldp_widget = QSpinBox()
+                                            lldp_widget.setRange(0,9999)
                                             lldp_widget.setValue(lldp_value)
+                                            lldp_widget.valueChanged.connect(lambda val, iface_value=iface_value, a=lldp_attr: update_lldp_int(iface_value, a, val))
                                         elif isinstance(lldp_value, float):
                                             lldp_widget = QDoubleSpinBox()
                                             lldp_widget.setValue(lldp_value)
+                                            lldp_widget.valueChanged.connect(lambda val, iface_value=iface_value, a=lldp_attr: update_lldp_float(iface_value, a, val))
                                         elif isinstance(lldp_value, str):
                                             lldp_widget = QLineEdit()
                                             lldp_widget.setText(lldp_value)
                                             lldp_widget.setFixedWidth(200)
+                                            lldp_widget.textChanged.connect(lambda text, iface_value=iface_value, a=lldp_attr: update_lldp_str(iface_value, a, text))
                                         elif isinstance(lldp_value, list):
                                             # add the list item on its own row
                                             if lldp_col > 0:
                                                 lldp_col = 0
-                                                lldp_row += 1                                                
+                                                lldp_row += 1
                                             lldp_widget = QLineEdit()
                                             lldp_widget.setText(", ".join(map(str, lldp_value)))  # Convert list to comma-separated string
                                             lldp_widget.setFixedWidth(400)
+                                            lldp_widget.textChanged.connect(lambda text, iface_value=iface_value, a=lldp_attr: update_lldp_list(iface_value, a, text))
                                         else:
                                             lldp_widget = QLabel(str(lldp_value))  # Fallback for other types
 
@@ -266,6 +386,27 @@ def create_dps_tab(config, dps_layout=None):
                                     print('Setting unsaved = True')
                                     globals.unsaved_changes = True  # Mark as unsaved changes
 
+                                # Update functions for lldp attributes
+                                def update_lldp_bool(lldp_dict, attr, state):
+                                    lldp_dict[attr] = bool(state)
+                                    globals.unsaved_changes = True
+
+                                def update_lldp_int(lldp_dict, attr, value):
+                                    lldp_dict[attr] = int(value)
+                                    globals.unsaved_changes = True
+
+                                def update_lldp_float(lldp_dict, attr, value):
+                                    lldp_dict[attr] = float(value)
+                                    globals.unsaved_changes = True
+
+                                def update_lldp_str(lldp_dict, attr, text):
+                                    lldp_dict[attr] = text
+                                    globals.unsaved_changes = True
+
+                                def update_lldp_list(lldp_dict, attr, text):
+                                    lldp_dict[attr] = text.split(", ")
+                                    globals.unsaved_changes = True
+
                                 # Connect the appropriate signal to the update_iface_value slot
                                 if isinstance(iface_widget, QSpinBox) or isinstance(iface_widget, QDoubleSpinBox):
                                     iface_widget.valueChanged.connect(lambda _, iface_attr=iface_attr, iface_widget=iface_widget, iface=iface: update_iface_value(iface_attr, iface_widget, iface))
@@ -288,28 +429,54 @@ def create_dps_tab(config, dps_layout=None):
                     #dot1x_group_box.setFixedWidth(750)
                     dot1x_layout = QGridLayout()
                     print(f'value={value}')
+                    
+                    def update_dot1x_bool(dot1x_dict, attr, state):
+                        dot1x_dict[attr] = bool(state)
+                        globals.unsaved_changes = True
+
+                    def update_dot1x_int(dot1x_dict, attr, value):
+                        dot1x_dict[attr] = int(value)
+                        globals.unsaved_changes = True
+
+                    def update_dot1x_float(dot1x_dict, attr, value):
+                        dot1x_dict[attr] = float(value)
+                        globals.unsaved_changes = True
+
+                    def update_dot1x_str(dot1x_dict, attr, text):
+                        dot1x_dict[attr] = text
+                        globals.unsaved_changes = True
+
+                    def update_dot1x_list(dot1x_dict, attr, text):
+                        dot1x_dict[attr] = text.split(", ")
+                        globals.unsaved_changes = True
+
                     dot1x_row = 0
                     dot1x_col = 0                       
                     for dot1x_attr, dot1x_value in value.items():
-
                         dot1x_label = QLabel(dot1x_attr)
                         if isinstance(dot1x_value, bool):
                             dot1x_widget = QCheckBox()
                             dot1x_widget.setChecked(dot1x_value)
+                            dot1x_widget.stateChanged.connect(lambda state, value=value, a=dot1x_attr: update_dot1x_bool(value, a, state))
                         elif isinstance(dot1x_value, int):
                             dot1x_widget = QSpinBox()
+                            dot1x_widget.setRange(0, 9999)
                             dot1x_widget.setValue(dot1x_value)
+                            dot1x_widget.valueChanged.connect(lambda val, value=value, a=dot1x_attr: update_dot1x_int(value, a, val))
                         elif isinstance(dot1x_value, float):
                             dot1x_widget = QDoubleSpinBox()
                             dot1x_widget.setValue(dot1x_value)
+                            dot1x_widget.valueChanged.connect(lambda val, value=value, a=dot1x_attr: update_dot1x_float(value, a, val))
                         elif isinstance(dot1x_value, str):
                             dot1x_widget = QLineEdit()
                             dot1x_widget.setText(dot1x_value)
                             dot1x_widget.setFixedWidth(200)
+                            dot1x_widget.textChanged.connect(lambda text, value=value, a=dot1x_attr: update_dot1x_str(value, a, text))
                         elif isinstance(dot1x_value, list):
                             dot1x_widget = QLineEdit()
                             dot1x_widget.setText(", ".join(map(str, dot1x_value)))  # Convert list to comma-separated string
                             dot1x_widget.setFixedWidth(200)
+                            dot1x_widget.textChanged.connect(lambda text, value=value, a=dot1x_attr: update_dot1x_list(value, a, text))
                         else:
                             dot1x_widget = QLabel(str(dot1x_value))  # Fallback for other types
 
@@ -333,6 +500,27 @@ def create_dps_tab(config, dps_layout=None):
                     #lldp_group_box.setFixedWidth(750)
                     lldp_layout = QGridLayout()
                     print(f'value={value}')
+
+                    def update_lldp_bool(lldp_dict, attr, state):
+                        lldp_dict[attr] = bool(state)
+                        globals.unsaved_changes = True
+
+                    def update_lldp_int(lldp_dict, attr, value):
+                        lldp_dict[attr] = int(value)
+                        globals.unsaved_changes = True
+
+                    def update_lldp_float(lldp_dict, attr, value):
+                        lldp_dict[attr] = float(value)
+                        globals.unsaved_changes = True
+
+                    def update_lldp_str(lldp_dict, attr, text):
+                        lldp_dict[attr] = text
+                        globals.unsaved_changes = True
+
+                    def update_lldp_list(lldp_dict, attr, text):
+                        lldp_dict[attr] = text.split(", ")
+                        globals.unsaved_changes = True
+
                     lldp_row = 0
                     lldp_col = 0                       
                     for lldp_attr, lldp_value in value.items():
@@ -341,21 +529,28 @@ def create_dps_tab(config, dps_layout=None):
                         if isinstance(lldp_value, bool):
                             lldp_widget = QCheckBox()
                             lldp_widget.setChecked(lldp_value)
+                            lldp_widget.stateChanged.connect(lambda state, value=value, a=lldp_attr: update_lldp_bool(value, a, state))
                         elif isinstance(lldp_value, int):
                             lldp_widget = QSpinBox()
                             lldp_widget.setValue(lldp_value)
+                            lldp_widget.setRange(0, 9999)
+                            lldp_widget.valueChanged.connect(lambda val, value=value, a=lldp_attr: update_lldp_int(value, a, val))
                         elif isinstance(lldp_value, float):
                             lldp_widget = QDoubleSpinBox()
                             lldp_widget.setValue(lldp_value)
+                            lldp_widget.setRange(0, 9999)
+                            lldp_widget.valueChanged.connect(lambda val, value=value, a=lldp_attr: update_lldp_float(value, a, val))
                         elif isinstance(lldp_value, str):
                             lldp_widget = QLineEdit()
                             lldp_widget.setText(lldp_value)
                             lldp_widget.setFixedWidth(200)
+                            lldp_widget.textChanged.connect(lambda text, value=value, a=lldp_attr: update_lldp_str(value, a, text))
                         elif isinstance(lldp_value, list):
                             print('List for=' + lldp_attr)
                             lldp_widget = QLineEdit()
                             lldp_widget.setText(", ".join(map(str, lldp_value)))  # Convert list to comma-separated string
                             lldp_widget.setFixedWidth(200)
+                            lldp_widget.textChanged.connect(lambda text, value=value, a=lldp_attr: update_lldp_list(value, a, text))
                         else:
                             lldp_widget = QLabel(str(lldp_value))  # Fallback for other types
 
@@ -379,6 +574,27 @@ def create_dps_tab(config, dps_layout=None):
                     #stack_group_box.setFixedWidth(750)
                     stack_layout = QGridLayout()
                     print(f'value={value}')
+
+                    def update_stack_bool(stack_dict, attr, state):
+                        stack_dict[attr] = bool(state)
+                        globals.unsaved_changes = True
+
+                    def update_stack_int(stack_dict, attr, value):
+                        stack_dict[attr] = int(value)
+                        globals.unsaved_changes = True
+
+                    def update_stack_float(stack_dict, attr, value):
+                        stack_dict[attr] = float(value)
+                        globals.unsaved_changes = True
+
+                    def update_stack_str(stack_dict, attr, text):
+                        stack_dict[attr] = text
+                        globals.unsaved_changes = True
+
+                    def update_stack_list(stack_dict, attr, text):
+                        stack_dict[attr] = text.split(", ")
+                        globals.unsaved_changes = True
+
                     stack_row = 0
                     stack_col = 0                       
                     for stack_attr, stack_value in value.items():
@@ -387,21 +603,28 @@ def create_dps_tab(config, dps_layout=None):
                         if isinstance(stack_value, bool):
                             stack_widget = QCheckBox()
                             stack_widget.setChecked(stack_value)
+                            stack_widget.stateChanged.connect(lambda state, value=value, a=stack_attr: update_stack_bool(value, a, state))
                         elif isinstance(stack_value, int):
                             stack_widget = QSpinBox()
+                            stack_widget.setRange(0, 9999)
                             stack_widget.setValue(stack_value)
+                            stack_widget.valueChanged.connect(lambda val, value=value, a=stack_attr: update_stack_int(value, a, val))
                         elif isinstance(stack_value, float):
                             stack_widget = QDoubleSpinBox()
+                            stack_widget.setRange(0, 9999)
                             stack_widget.setValue(stack_value)
+                            stack_widget.valueChanged.connect(lambda val, value=value, a=stack_attr: update_stack_float(value, a, val))
                         elif isinstance(stack_value, str):
                             stack_widget = QLineEdit()
                             stack_widget.setText(stack_value)
                             stack_widget.setFixedWidth(200)
+                            stack_widget.textChanged.connect(lambda text, value=value, a=stack_attr: update_stack_str(value, a, text))
                         elif isinstance(stack_value, list):
                             print('List for=' + stack_attr)
                             stack_widget = QLineEdit()
                             stack_widget.setText(", ".join(map(str, stack_value)))  # Convert list to comma-separated string
                             stack_widget.setFixedWidth(200)
+                            stack_widget.textChanged.connect(lambda text, value=value, a=stack_attr: update_stack_list(value, a, text))
                         else:
                             stack_widget = QLabel(str(stack_value))  # Fallback for other types
 
