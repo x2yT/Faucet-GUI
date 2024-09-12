@@ -1,6 +1,6 @@
 import yaml
 from models.vlan import Vlan
-from models.router import Router
+from models.router import Router, Bgp
 from models.dp import DP, Interface
 from models.acls import ACL, Rule, Action, OutputAction, TunnelAction
 from models.config import Config
@@ -28,8 +28,16 @@ def vlan_representer(dumper, data):
 # Custom representer for Router objects
 def router_representer(dumper, data):
     return dumper.represent_dict({
-        'vlans': data.vlans
+        'vlans': data.vlans,
+        'vlan': data.bgp.vlan,
+        'as_number': data.bgp.as_number,
+        'port': data.bgp.port,
+        'routerid': data.bgp.routerid,
+        'server_addresses': data.bgp.server_addresses,
+        'neighbor_addresses': data.bgp.neighbor_addresses,
+        'neighbor_as': data.bgp.neighbor_as
     })
+
 
 # Custom representer for Config objects
 def config_representer(dumper, data):
