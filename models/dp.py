@@ -1,8 +1,8 @@
 class Interface:
-    def __init__(self, name, description, native_vlan, tagged_vlans=None, acls_in=None, **kwargs):
+    def __init__(self, name, tagged_vlans=None, acls_in=None, **kwargs):
         self.name = name
-        self.description = description
-        self.native_vlan = native_vlan
+        self.description = kwargs.get('description', None)
+        self.native_vlan = kwargs.get('native_vlan', None)
         self.tagged_vlans = tagged_vlans if tagged_vlans is not None else []
         self.acls_in = acls_in if acls_in is not None else []
         self.acl_in = kwargs.get('acl_in', None)
