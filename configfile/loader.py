@@ -2,7 +2,7 @@
 
 import yaml
 from models.vlan import Vlan
-from models.router import Router
+from models.router import Router, Bgp
 from models.dp import DP, Interface
 from models.config import Config
 from models.acls import ACL, Rule
@@ -38,7 +38,19 @@ def load_vlan(data):
     )
 
 def load_router(data):
-    return Router(router=data['routers'])
+    vlans=data.get('vlans', [])
+    bgp_info=data.get('bgp', {})
+    bgp=Bgp(
+        vlan=bgp_info.get('vlan', ''),
+        as_number=bgp_info.get('as', 0),
+        port=bgp_info.get('port', 0),
+        routerid=bgp_info.get('routerid', ''),
+        server_addresses=bgp_info.get('server_addresses', []),
+        neighbor_addresses=bgp_info.get('neighbor_addresses', []),
+        neighbor_as=bgp_info.get('neighbor_as', 0)
+    )
+
+    return Router(vlans, bgp)
 
 def load_interface(data):
     #lldp_beacon = data.get('lldp_beacon', None)  # Set to None if not provided
