@@ -1,7 +1,7 @@
 import yaml
 from models.vlan import Vlan
 from models.router import Router
-from models.dp import DP
+from models.dp import DP, Interface
 from models.acls import ACL, Rule, Action, OutputAction, TunnelAction
 from models.config import Config
 
@@ -29,14 +29,6 @@ def vlan_representer(dumper, data):
 def router_representer(dumper, data):
     return dumper.represent_dict({
         'vlans': data.vlans
-    })
-
-# Custom representer for DP objects
-def dp_representer(dumper, data):
-    return dumper.represent_dict({
-        'dp_id': data.dp_id,
-        'hardware': data.hardware,
-        'interfaces': data.interfaces
     })
 
 # Custom representer for Config objects
@@ -130,16 +122,63 @@ def tunnel_action_representer(dumper, data):
         'dst_ip': data.dst_ip
     })
 
+# Custom representer for DP objects
+def dp_representer(dumper, data):
+    # Retrieve all attributes of the DP object
+    attributes = {attr: getattr(data, attr) for attr in dir(data) if not callable(getattr(data, attr)) and not attr.startswith("__")}
+
+    # Filter out empty attributes
+    filtered_attributes = {k: v for k, v in attributes.items() if v not in (None, '', [], {})}
+
+    # Represent the filtered dictionary
+    return dumper.represent_dict(filtered_attributes)
+
+
+# Custom representer for Interface objects
+def interface_representer(dumper, data):
+    attributes = {
+        'name': data.name,
+        'acl_in': data.acl_in,
+        'acls_in': data.acls_in,
+        'description': data.description,
+        'dot1x': data.dot1x,
+        'dot1x_acl': data.dot1x_acl,
+        'dot1x_mab': data.dot1x_mab,
+        'enabled': data.enabled,
+        'hairpin': data.hairpin,
+        'loop_protect': data.loop_protect,
+        'loop_protect_external': data.loop_protect_external,
+        'max_hosts': data.max_hosts,
+        'mirror': data.mirror,
+        'native_vlan': data.native_vlan,
+        'number': data.number,
+        'opstatus_reconf': data.opstatus_reconf,
+        'output_only': data.output_only,
+        'permanent_learn': data.permanent_learn,
+        'tagged_vlans': data.tagged_vlans,
+        'unicast_flood': data.unicast_flood,
+        'restricted_bcast_arpnd': data.restricted_bcast_arpnd,
+        'lldp_beacon': data.lldp_beacon,
+        'stack': data.stack
+    }
+
+    # Filter out empty attributes
+    filtered_attributes = {k: v for k, v in attributes.items() if v not in (None, '', [], {})}
+
+    # Represent the filtered dictionary
+    return dumper.represent_dict(filtered_attributes)
+
 # Register the custom representers with PyYAML
 yaml.add_representer(Vlan, vlan_representer)
 yaml.add_representer(Router, router_representer)
-yaml.add_representer(DP, dp_representer)
 yaml.add_representer(Config, config_representer)
 yaml.add_representer(ACL, acl_representer)
 yaml.add_representer(Rule, rule_representer)
 yaml.add_representer(Action, action_representer)
 yaml.add_representer(OutputAction, output_action_representer)
 yaml.add_representer(TunnelAction, tunnel_action_representer)
+yaml.add_representer(DP, dp_representer)
+yaml.add_representer(Interface, interface_representer)
 
 def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=True, save_acls=True):
     # Create a dictionary to hold the parts of the configuration to save
