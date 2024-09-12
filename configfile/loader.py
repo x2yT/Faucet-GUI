@@ -53,20 +53,21 @@ def load_router(data):
     return Router(vlans, bgp)
 
 def load_interface(data):
-    lldp_beacon = data.get('lldp_beacon', None)  # Set to None if not provided
-    lldp_beacon_org_tlvs = []
-
-    if lldp_beacon:
-        lldp_beacon_org_tlvs = [
-            {
-                'info': tlv.get('info'),
-                'oui': tlv.get('oui'),
-                'subtype': tlv.get('subtype')
-            } for tlv in lldp_beacon.get('org_tlvs', [])
-        ]
-        lldp_beacon['org_tlvs'] = lldp_beacon_org_tlvs
+    #lldp_beacon = data.get('lldp_beacon', None)  # Set to None if not provided
+    #lldp_beacon_org_tlvs = []
+    #print(lldp_beacon['org_tlvs'])
+    # if lldp_beacon:
+    #     lldp_beacon_org_tlvs = [
+    #         {
+    #             'info': tlv.get('info'),
+    #             'oui': tlv.get('oui'),
+    #             'subtype': tlv.get('subtype')
+    #         } for tlv in lldp_beacon.get('org_tlvs', None)
+    #     ]
+    #     lldp_beacon['org_tlvs'] = lldp_beacon_org_tlvs
 
     stack = data.get('stack', {})
+    lldp_beacon = data.get('lldp_beacon', {})
 
     return Interface(
         name=data['name'],
@@ -101,13 +102,11 @@ def load_dp(data):
     stack = data.get('stack', {})
 
     return DP(
-        dp_id=data['dp_id'],
-        hardware=data['hardware'],
-        interfaces=interfaces,
+        dp_id=data.get('dp_id'),
+        hardware=data.get('hardware'),
         advertise_interval=data.get('advertise_interval'),
         arp_neighbor_timeout=data.get('arp_neighbor_timeout'),
         description=data.get('description'),
-        dot1x=data.get('dot1x'),
         drop_broadcast_source_address=data.get('drop_broadcast_source_address'),
         drop_spoofed_faucet_mac=data.get('drop_spoofed_faucet_mac'),
         group_table=data.get('group_table'),
@@ -117,7 +116,6 @@ def load_dp(data):
         interface_ranges=data.get('interface_ranges'),
         learn_ban_timeout=data.get('learn_ban_timeout'),
         learn_jitter=data.get('learn_jitter'),
-        lldp_beacon=lldp_beacon,
         low_priority=data.get('low_priority'),
         lowest_priority=data.get('lowest_priority'),
         max_host_fib_retry_count=data.get('max_host_fib_retry_count'),
@@ -131,12 +129,15 @@ def load_dp(data):
         priority_offset=data.get('priority_offset'),
         proactive_learn_v4=data.get('proactive_learn_v4'),
         proactive_learn_v6=data.get('proactive_learn_v6'),
-        stack=stack,
         timeout=data.get('timeout'),
         use_idle_timeout=data.get('use_idle_timeout'),
         table_sizes=data.get('table_sizes'),
         port_table_scale_factor=data.get('port_table_scale_factor'),
-        global_vlan=data.get('global_vlan')
+        global_vlan=data.get('global_vlan'),
+        dot1x=data.get('dot1x'),
+        interfaces=interfaces,   
+        lldp_beacon=lldp_beacon,
+        stack=stack         
     )
 
 def load_acls(acls_data):
