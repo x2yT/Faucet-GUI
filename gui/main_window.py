@@ -76,12 +76,43 @@ class MainWindow(QMainWindow):
         # Open a file dialog to get the file name of the YAML file to open
         config_file_name, _ = QFileDialog.getOpenFileName(self, "Open YAML File", "", "YAML Files (*.yaml)")
         if config_file_name:
-            # Load the configuration from the specified file
-            self.config = load_config(config_file_name)
-            # Populate the tabs with the loaded configuration
-            self.populate_tabs()
-            # Update the window title with the opened file name
-            self.setWindowTitle("Faucet GUI - " + config_file_name)
+            try:
+                # Load the configuration from the specified file
+                print("calling load_config")
+                self.config, vlans_loaded, routers_loaded, dps_loaded, acls_loaded = load_config(config_file_name)
+                
+                
+                # Handle the boolean flags (e.g., display a message if a section failed to load)
+                load_issues = "Warning: "
+                if not vlans_loaded:
+                    load_issues += "VLANs failed to load."
+                if not routers_loaded:
+                    load_issues += " Routers failed to load."
+                if not dps_loaded:
+                    load_issues += " DPs failed to load."
+                if not acls_loaded:
+                    load_issues += " ACLs failed to load."
+                if load_issues != "Warning: ":
+                    print("Load_issues=" + load_issues)
+                    # Display a warning dialog with the load issues
+                    warning_dialog = QMessageBox()
+                    warning_dialog.setIcon(QMessageBox.Icon.Warning)
+                    warning_dialog.setWindowTitle("File Load Issues")
+                    warning_dialog.setText(load_issues)
+                    warning_dialog.exec()
+
+                # Populate the tabs with the loaded configuration
+                print("populate_tabs")
+                self.populate_tabs()
+                # Update the window title with the opened file name
+                self.setWindowTitle("Faucet GUI - " + config_file_name)
+            except Exception as e:
+                # Display an error message if loading the file fails
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Icon.Critical)
+                error_dialog.setWindowTitle("Load Error")
+                error_dialog.setText("File format is invalid and cannot be loaded")
+                error_dialog.exec()
             
     # Method to save the current configuration to a file
     def save_file(self):

@@ -1,6 +1,7 @@
 # loader.py
 
-import yaml
+import yaml, os
+from PyQt6.QtWidgets import QProgressBar, QApplication
 from models.vlan import Vlan
 from models.router import Router, Bgp
 from models.dp import DP, Interface
@@ -157,7 +158,24 @@ def load_acls(acls_data):
 #     return data
 
 # load the selected faucet yaml configuration file
-def load_config(yaml_file):
+def load_config(yaml_file, ):
+    # Extract the file name from the full path
+    file_name = os.path.basename(yaml_file)
+    # Setup a progress bar for the file load
+    progress_bar = QProgressBar()
+    progress_bar.setWindowTitle("Loading " + file_name)
+    progress_bar.setMinimum(0)
+    progress_bar.setMaximum(4)  # We have 4 sections to load: vlans, routers, dps, acls
+    progress_bar.resize(300,200)
+    progress_bar.show()
+
+    # Initialize load flags for each tab
+    vlans_loaded = False
+    routers_loaded = False
+    dps_loaded = False
+    acls_loaded = False
+
+    # Open the file
     try:
         with open(yaml_file, 'r') as file:
             data = yaml.safe_load(file)
@@ -165,15 +183,42 @@ def load_config(yaml_file):
                 raise InvalidYAMLFormatError("Faucet configuration file is empty or contains only comments")
     except yaml.YAMLError as e:
         raise InvalidYAMLFormatError(f"Invalid YAML format: {e}")
-    
-    vlans = {k: load_vlan(v) for k, v in data.get('vlans', {}).items()}
-    routers = {k: load_router(v) for k, v in data.get('routers', {}).items()}
-    dps = {k: load_dp(v) for k, v in data.get('dps', {}).items()}
-    acls_data = data.get('acls', {})
-    acls = load_acls(acls_data)
-    
-    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls)
 
+    try:
+        vlans = {k: load_vlan(v) for k, v in data.get('vlans', {}).items()}
+        vlans_loaded = True
+    except Exception as e:
+        print(f"Failed to load vlans: {e}")
+
+    progress_bar.setValue(1)
+
+    try:
+        routers = {k: load_router(v) for k, v in data.get('routers', {}).items()}
+        routers_loaded = True
+    except Exception as e:
+        print(f"Failed to load routers: {e}")
+
+    progress_bar.setValue(2)
+
+    try:
+        dps = {k: load_dp(v) for k, v in data.get('dps', {}).items()}
+        dps_loaded = True
+    except Exception as e:
+        print(f"Failed to load dps: {e}")
+
+    progress_bar.setValue(3)
+
+    try:
+        acls_data = data.get('acls', {})
+        acls = load_acls(acls_data)
+        acls_loaded = True
+    except Exception as e:
+        print(f"Failed to load acls: {e}")
+
+    progress_bar.setValue(4)
+    progress_bar.close()
+
+    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls), vlans_loaded, routers_loaded, dps_loaded, acls_loaded
 
 def new_config():
     default_vlan = Vlan(
