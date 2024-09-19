@@ -1,0 +1,18 @@
+meters:
+  meter1:
+    meter_id: m1
+    bands:
+      - rate: 1000
+        burst_size: 100
+        action: conform
+      - rate: 2000
+        burst_size: 200
+        action: exceed
+    unit: kbps
+  meter2:
+    meter_id: m2
+    bands:
+      - rate: 1500
+        burst_size: 150
+        action: conform
+    unit: mbps

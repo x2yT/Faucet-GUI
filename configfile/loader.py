@@ -7,7 +7,7 @@ from models.router import Router, Bgp
 from models.dp import DP, Interface
 from models.config import Config
 from models.acls import ACL, Rule
-from models.meter import Meter
+from models.meter import Meter, Band
 
 
 
@@ -155,18 +155,23 @@ def load_acls(acls_data):
     return acls
 
 
-def load_meter(data):
-    return Meter(
-        meter_id=data.get('meter_id'),
+def load_band(data):
+    return Band(
         rate=data.get('rate', 0),
-        burst=data.get('burst', 0),
-        conform_action=data.get('conform_action', ''),
-        exceed_action=data.get('exceed_action', ''),
-        discard_action=data.get('discard_action', ''),
+        burst_size=data.get('burst', None),
+        action=data.get('action', None)
     )
 
 
+def load_meter(data):
+    bands_data = data.get('bands', [])
+    bands = [load_band(band) for band in bands_data]
 
+    return Meter(
+        meter_id=data.get('meter_id', None),  # Default value None if not provided
+        bands=bands,
+        unit=data.get('unit', "kbps")
+    )
 
 
 # def convert_dl_type_to_hex(data):
@@ -236,7 +241,7 @@ def load_config(yaml_file, ):
 
     try:
         meters_data = data.get('meters', {})
-        meters = {k: load_meter(v) for k, v in meters_data.items()}  # Load meters if present
+        meters = {k: load_meter(v) for k, v in meters_data.items()}
         meters_loaded = True
     except Exception as e:
         print(f"Failed to load meters: {e}")
@@ -278,9 +283,22 @@ def new_config():
         rules=[]
     )
 
+    default_band = Band(
+        rate=0,
+        burst_size=0,
+        action=''
+    )
+
+    default_meter = Meter(
+        meter_id=1,
+        bands=[default_band],
+        unit="kbps"
+    )
+
     vlans = {'default_vlan': default_vlan}
     dps = {'default_dp': default_dp}
     acls = {'default_acls': default_acl}
     routers = {}
+    meters = {'default_meter': default_meter}
 
-    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls)
+    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls, meters=meters)
