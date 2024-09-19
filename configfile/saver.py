@@ -134,10 +134,11 @@ def tunnel_action_representer(dumper, data):
 # Custom representer for Meter objects
 def meter_representer(dumper, data):
     return dumper.represent_dict({
-        'id': data.id,
+        'name': data.name,
         'rate': data.rate,
-        'burst': data.burst
+        'burst_size': data.burst_size
     })
+
 
 # Custom representer for DP objects
 def dp_representer(dumper, data):
