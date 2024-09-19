@@ -4,6 +4,7 @@ from models.router import Router, Bgp
 from models.dp import DP, Interface
 from models.acls import ACL, Rule, Action, OutputAction, TunnelAction
 from models.config import Config
+from models.meter import Meter  # Import Meter class
 
 # Custom representer for Vlan objects
 def vlan_representer(dumper, data):
@@ -130,6 +131,14 @@ def tunnel_action_representer(dumper, data):
         'dst_ip': data.dst_ip
     })
 
+# Custom representer for Meter objects
+def meter_representer(dumper, data):
+    return dumper.represent_dict({
+        'id': data.id,
+        'rate': data.rate,
+        'burst': data.burst
+    })
+
 # Custom representer for DP objects
 def dp_representer(dumper, data):
     # Retrieve all attributes of the DP object
@@ -188,7 +197,10 @@ yaml.add_representer(TunnelAction, tunnel_action_representer)
 yaml.add_representer(DP, dp_representer)
 yaml.add_representer(Interface, interface_representer)
 
-def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=True, save_acls=True):
+# Register the custom representer with PyYAML
+yaml.add_representer(Meter, meter_representer)
+
+def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=True, save_acls=True, save_meters=True):
     # Create a dictionary to hold the parts of the configuration to save
     data_to_save = {}
     
@@ -200,6 +212,8 @@ def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=
         data_to_save['dps'] = config.dps
     if save_acls:
         data_to_save['acls'] = config.acls
+    if save_meters:
+        data_to_save['meters'] = config.meters
 
     # Open the specified YAML file in write mode
     with open(yaml_file, 'w') as file:

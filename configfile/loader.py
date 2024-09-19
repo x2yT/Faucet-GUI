@@ -7,6 +7,8 @@ from models.router import Router, Bgp
 from models.dp import DP, Interface
 from models.config import Config
 from models.acls import ACL, Rule
+from models.meter import Meter
+
 
 
 # Custom exception for invalid YAML format
@@ -99,6 +101,7 @@ def load_interface(data):
 
 def load_dp(data):
     interfaces = {k: load_interface(v) for k, v in data['interfaces'].items()}
+    meters = {k: load_meter(v) for k, v in data.get('meters', {}).items()}  # Load meters if present
     lldp_beacon = data.get('lldp_beacon', {})
     stack = data.get('stack', {})
 
@@ -138,7 +141,8 @@ def load_dp(data):
         dot1x=data.get('dot1x'),
         interfaces=interfaces,   
         lldp_beacon=lldp_beacon,
-        stack=stack         
+        stack=stack,
+        meters = meters  # Add meters to the DP
     )
 
 def load_acls(acls_data):
@@ -151,6 +155,21 @@ def load_acls(acls_data):
     else:
         raise TypeError("Expected acls_data to be a dictionary")
     return acls
+
+
+def load_meter(data):
+    return Meter(
+        meter_id=data.get('meter_id'),
+        rate=data.get('rate', 0),
+        burst=data.get('burst', 0),
+        conform_action=data.get('conform_action', ''),
+        exceed_action=data.get('exceed_action', ''),
+        discard_action=data.get('discard_action', ''),
+    )
+
+
+
+
 
 # def convert_dl_type_to_hex(data):
 #     if 'dl_type' in data and isinstance(data['dl_type'], int):
@@ -165,7 +184,7 @@ def load_config(yaml_file, ):
     progress_bar = QProgressBar()
     progress_bar.setWindowTitle("Loading " + file_name)
     progress_bar.setMinimum(0)
-    progress_bar.setMaximum(4)  # We have 4 sections to load: vlans, routers, dps, acls
+    progress_bar.setMaximum(5)  # We have 4 sections to load: vlans, routers, dps, acls, meters
     progress_bar.resize(300,200)
     progress_bar.show()
 
@@ -216,9 +235,20 @@ def load_config(yaml_file, ):
         print(f"Failed to load acls: {e}")
 
     progress_bar.setValue(4)
+
+    try:
+        meters_data = data.get('meters', {})
+        meters = {k: load_meter(v) for k, v in meters_data.items()}  # Load meters if present
+        meters_loaded = True
+    except Exception as e:
+        print(f"Failed to load meters: {e}")
+
+    progress_bar.setValue(5)
+
+
     progress_bar.close()
 
-    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls), vlans_loaded, routers_loaded, dps_loaded, acls_loaded
+    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls, meters=meters), vlans_loaded, routers_loaded, dps_loaded, acls_loaded
 
 def new_config():
     default_vlan = Vlan(
