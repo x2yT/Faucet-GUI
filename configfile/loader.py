@@ -101,7 +101,6 @@ def load_interface(data):
 
 def load_dp(data):
     interfaces = {k: load_interface(v) for k, v in data['interfaces'].items()}
-    meters = {k: load_meter(v) for k, v in data.get('meters', {}).items()}  # Load meters if present
     lldp_beacon = data.get('lldp_beacon', {})
     stack = data.get('stack', {})
 
@@ -141,8 +140,7 @@ def load_dp(data):
         dot1x=data.get('dot1x'),
         interfaces=interfaces,   
         lldp_beacon=lldp_beacon,
-        stack=stack,
-        meters = meters  # Add meters to the DP
+        stack=stack
     )
 
 def load_acls(acls_data):
