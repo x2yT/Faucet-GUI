@@ -6,6 +6,7 @@ from gui.vlans_tab import create_vlans_tab
 from gui.routers_tab import create_routers_tab
 from gui.dps_tab import create_dps_tab
 from gui.acls_tab import create_acls_tab
+from gui.meter_tab import MetersTab
 
 import globals  # Import any global variables
 
@@ -145,7 +146,11 @@ class MainWindow(QMainWindow):
 
         # Create and add the ACLS tab
         acls_tab = create_acls_tab(self.config)
-        self.tabs.addTab(acls_tab, "ACLS")  
+        self.tabs.addTab(acls_tab, "ACLS")
+
+        # Create and add the Meters tab
+        meters_tab = MetersTab(self.config)
+        self.tabs.addTab(meters_tab, "Meters")
 
     def closeEvent(self, event):
         # Check if any changes have been made and not saved
