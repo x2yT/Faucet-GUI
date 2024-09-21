@@ -1,6 +1,6 @@
 # vlans_tab.py
 
-from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton, QScrollArea, QMessageBox
+from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton, QScrollArea, QMessageBox, QSizePolicy
 from configfile.loader import new_config, Vlan  # Assuming new_config is imported from loader.py
 import globals
 
@@ -12,6 +12,7 @@ class AddRouteDialog(QDialog):
         self.setModal(True)
         
         layout = QVBoxLayout()
+        layout.addStretch(1)
         
         # Input fields for ip_dst and ip_gw
         self.ip_dst_edit = QLineEdit(self)
@@ -87,6 +88,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
     if vlans_layout is None:
         vlans_tab = QWidget()
         vlans_layout = QVBoxLayout()
+        vlans_layout.addStretch(1)
         vlans_tab.setLayout(vlans_layout)
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -148,6 +150,9 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         vlan_groupbox = QGroupBox(name)        
         # Set the font size and weight for the QGroupBox title
         vlan_groupbox.setStyleSheet("QGroupBox { font-size: 12pt; font-weight: bold; }")
+        # Set the size policy to expanding
+        vlan_groupbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        vlan_groupbox.setMinimumWidth(810) 
 
         # Create a QGridLayout for the VLAN details
         vlan_layout = QGridLayout()
@@ -400,6 +405,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
 
         # Add the group box to the main layout
         vlans_layout.addWidget(vlan_groupbox)
+        vlans_layout.setStretch(0, 1) # Ensures the QGroupBox expands horizontally
 
     # Set the layout for the VLANs tab
     vlans_tab.setLayout(vlans_layout)
