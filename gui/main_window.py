@@ -115,6 +115,7 @@ class MainWindow(QMainWindow):
                 error_dialog.setIcon(QMessageBox.Icon.Critical)
                 error_dialog.setWindowTitle("Load Error")
                 error_dialog.setText("File format is invalid and cannot be loaded")
+                error_dialog.setDetailedText(str(e))
                 error_dialog.exec()
             
     # Method to save the current configuration to a file
