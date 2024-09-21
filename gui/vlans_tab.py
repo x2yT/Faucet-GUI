@@ -152,7 +152,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         vlan_groupbox.setStyleSheet("QGroupBox { font-size: 12pt; font-weight: bold; }")
         # Set the size policy to expanding
         vlan_groupbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        vlan_groupbox.setMinimumWidth(800) 
+        vlan_groupbox.setMinimumWidth(810) 
 
         # Create a QGridLayout for the VLAN details
         vlan_layout = QGridLayout()
