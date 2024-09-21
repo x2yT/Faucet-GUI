@@ -80,8 +80,8 @@ class MainWindow(QMainWindow):
             try:
                 # Load the configuration from the specified file
                 print("calling load_config")
-                self.config, vlans_loaded, routers_loaded, dps_loaded, acls_loaded = load_config(config_file_name)
-                
+                self.config, vlans_loaded, routers_loaded, dps_loaded, acls_loaded, meters_loaded = load_config(config_file_name)
+                print("config loaded")
                 
                 # Handle the boolean flags (e.g., display a message if a section failed to load)
                 load_issues = "Warning: "
@@ -93,6 +93,8 @@ class MainWindow(QMainWindow):
                     load_issues += " DPs failed to load."
                 if not acls_loaded:
                     load_issues += " ACLs failed to load."
+                if not meters_loaded:
+                    load_issues += " Meters failed to load."
                 if load_issues != "Warning: ":
                     print("Load_issues=" + load_issues)
                     # Display a warning dialog with the load issues
