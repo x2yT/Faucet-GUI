@@ -196,6 +196,7 @@ def load_config(yaml_file, ):
     routers_loaded = False
     dps_loaded = False
     acls_loaded = False
+    meters_loaded = False
 
     # Open the file
     try:
@@ -247,11 +248,9 @@ def load_config(yaml_file, ):
         print(f"Failed to load meters: {e}")
 
     progress_bar.setValue(5)
-
-
     progress_bar.close()
 
-    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls, meters=meters), vlans_loaded, routers_loaded, dps_loaded, acls_loaded
+    return Config(vlans=vlans, routers=routers, dps=dps, acls=acls, meters=meters), vlans_loaded, routers_loaded, dps_loaded, acls_loaded, meters_loaded
 
 def new_config():
     default_vlan = Vlan(
