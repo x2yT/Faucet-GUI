@@ -187,26 +187,26 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Add other VLAN details to the form
 
         vlan_layout.addWidget(QLabel("ACLs In:"), row, 0)
-        acls_in_edit = create_line_edit(', '.join(vlan.acls_in), vlan_groupbox)
+        acls_in_edit = create_line_edit(', '.join(vlan.acls_in), vlan_groupbox, 500)
         vlan_layout.addWidget(acls_in_edit, row, 1)
         row += 1
         # Slot function to update user changes back to vlan.acls_in
-        def update_acls_in(text):
-            vlan.acls_in = text.split(', ')
+        def update_acls_in(vlan_instance, text):
+            vlan_instance.acls_in = text.split(', ')
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the textChanged signal to the slot function
-        acls_in_edit.textChanged.connect(update_acls_in)
+        acls_in_edit.textChanged.connect(lambda text, vlan_instance=vlan: update_acls_in(vlan_instance, text))
 
         vlan_layout.addWidget(QLabel("Description:"), row, 0)
         description_edit = QLineEdit(vlan.description, vlan_groupbox)
         vlan_layout.addWidget(description_edit, row, 1, 1, 3)
         row += 1
         # Slot function to update vlan.acls_in with the description
-        def update_description(text):
-            vlan.description = [text]
+        def update_description(vlan_instance, text):
+            vlan_instance.description = [text]
             globals.unsaved_changes = True  # Mark as unsaved changes
             print("Unsaved Changed=" + str(globals.unsaved_changes))
-        description_edit.textChanged.connect(update_description)
+        description_edit.textChanged.connect(lambda text, vlan_instance=vlan: update_description(vlan_instance, text))
         
         # Add a QCheckBox for dot1x_assigned
         vlan_layout.addWidget(QLabel("Dot1x Assigned:"), row, 0)
@@ -215,12 +215,12 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         vlan_layout.addWidget(dot1x_checkbox, row, 1)
         row += 1
         # Slot function to update vlan.dot1x_assigned
-        def update_dot1x_assigned(state):
-            vlan.dot1x_assigned = bool(state)
+        def update_dot1x_assigned(vlan_instan, state):
+            vlan_instan.dot1x_assigned = bool(state)
             globals.unsaved_changes = True  # Mark as unsaved changes
             print('dot1x=' + str(vlan.dot1x_assigned))
         # Connect the stateChanged signal to the slot function
-        dot1x_checkbox.stateChanged.connect(update_dot1x_assigned)
+        dot1x_checkbox.stateChanged.connect(lambda state, vlan_instance=vlan: update_dot1x_assigned(vlan_instance, state))
         
         # Add Faucet VIPs and Faucet MAC 
         vlan_layout.addWidget(QLabel("Faucet VIPs:"), row, 0)
@@ -229,20 +229,20 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         row += 1
         #
         vlan_layout.addWidget(QLabel("Faucet MAC:"), row, 0)
-        faucet_mac_edit = QLineEdit(vlan.faucet_mac, vlan_groupbox)
+        faucet_mac_edit = create_line_edit(vlan.faucet_mac, vlan_groupbox)
         vlan_layout.addWidget(faucet_mac_edit, row, 1, 1, 3)
         row += 1
         # Slot function to update vlan.faucet_vips
-        def update_faucet_vips(text):
-            vlan.faucet_vips = text.split(', ')
+        def update_faucet_vips(vlan_instance, text):
+            vlan_instance.faucet_vips = text.split(', ')
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Slot function to update vlan.faucet_mac
-        def update_faucet_mac(text):
-            vlan.faucet_mac = text
+        def update_faucet_mac(vlan_instance, text):
+            vlan_instance.faucet_mac = text
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the textChanged signals to the slot functions
-        faucet_vips_edit.textChanged.connect(update_faucet_vips)
-        faucet_mac_edit.textChanged.connect(update_faucet_mac)
+        faucet_vips_edit.textChanged.connect(lambda text, vlan_instance=vlan: update_faucet_vips(vlan_instance, text))
+        faucet_mac_edit.textChanged.connect(lambda text, vlan_instance=vlan: update_faucet_mac(vlan_instance, text))
         
         # Add a QSpinBox for max_hosts
         vlan_layout.addWidget(QLabel("Max Hosts:"), row, 0)
@@ -253,11 +253,11 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         vlan_layout.addWidget(max_hosts_spinbox, row, 1)
         row += 1
         # Slot function to update vlan.max_hosts
-        def update_max_hosts(value):
-            vlan.max_hosts = value
+        def update_max_hosts(vlan_instance, value):
+            vlan_instance.max_hosts = value
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the valueChanged signal to the slot function
-        max_hosts_spinbox.valueChanged.connect(update_max_hosts)
+        max_hosts_spinbox.valueChanged.connect(lambda value, vlan_instance=vlan: update_max_hosts(vlan_instance, value))
         
         # Add a QCheckBox for minimum_ip_size_check
         vlan_layout.addWidget(QLabel("Minimum IP Size Check:"), row, 0)
@@ -266,17 +266,18 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         vlan_layout.addWidget(minimum_ip_size_check_checkbox, row, 1)
         row += 1
         # Slot function to update vlan.minimum_ip_size_check
-        def update_minimum_ip_size_check(state):
-            vlan.minimum_ip_size_check = bool(state)
+        def update_minimum_ip_size_check(vlan_instance, state):
+            vlan_instance.minimum_ip_size_check = bool(state)
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the stateChanged signal to the slot function
-        minimum_ip_size_check_checkbox.stateChanged.connect(update_minimum_ip_size_check)     
+        minimum_ip_size_check_checkbox.stateChanged.connect(lambda state, vlan_instance=vlan: update_minimum_ip_size_check(vlan_instance, state))     
        
         # Add a QSpinBox for proactive_arp_limit
         vlan_layout.addWidget(QLabel("Proactive ARP Limit:"), row, 0)
         proactive_arp_limit_spinbox = QSpinBox(vlan_groupbox)
         proactive_arp_limit_spinbox.setRange(0, 9999)
         proactive_arp_limit_spinbox.setValue(vlan.proactive_arp_limit)
+        proactive_arp_limit_spinbox.setFixedWidth(90)
         vlan_layout.addWidget(proactive_arp_limit_spinbox, row, 1)
         row += 1
         # Add a QSpinBox for proactive_nd_limit
@@ -284,19 +285,20 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         proactive_nd_limit_spinbox = QSpinBox(vlan_groupbox)
         proactive_nd_limit_spinbox.setRange(0, 9999)
         proactive_nd_limit_spinbox.setValue(vlan.proactive_nd_limit)
+        proactive_nd_limit_spinbox.setFixedWidth(90)
         vlan_layout.addWidget(proactive_nd_limit_spinbox, row, 1)
         row += 1
         # Slot function to update vlan.proactive_arp_limit
-        def update_proactive_arp_limit(value):
-            vlan.proactive_arp_limit = value
+        def update_proactive_arp_limit(vlan_instance, value):
+            vlan_instance.proactive_arp_limit = value
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Slot function to update vlan.proactive_nd_limit
-        def update_proactive_nd_limit(value):
-            vlan.proactive_nd_limit = value
+        def update_proactive_nd_limit(vlan_instance, value):
+            vlan_instance.proactive_nd_limit = value
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the valueChanged signals to the slot functions
-        proactive_arp_limit_spinbox.valueChanged.connect(update_proactive_arp_limit)
-        proactive_nd_limit_spinbox.valueChanged.connect(update_proactive_nd_limit)
+        proactive_arp_limit_spinbox.valueChanged.connect(lambda value, vlan_instance=vlan: update_proactive_arp_limit(vlan_instance, value))
+        proactive_nd_limit_spinbox.valueChanged.connect(lambda value, vlan_instance=vlan: update_proactive_nd_limit(vlan_instance, value))
         
         # Add a QCheckBox for targeted_gw_resolution
         vlan_layout.addWidget(QLabel("Targeted GW Resolution:"), row, 0)
@@ -305,11 +307,11 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         vlan_layout.addWidget(targeted_gw_resolution_checkbox, row, 1)
         row += 1
         # Slot function to update vlan.targeted_gw_resolution
-        def update_targeted_gw_resolution(state):
-            vlan.targeted_gw_resolution = bool(state)
+        def update_targeted_gw_resolution(vlan_instance, state):
+            vlan_instance.targeted_gw_resolution = bool(state)
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the stateChanged signal to the slot function
-        targeted_gw_resolution_checkbox.stateChanged.connect(update_targeted_gw_resolution)
+        targeted_gw_resolution_checkbox.stateChanged.connect(lambda state, vlan_instance=vlan: update_targeted_gw_resolution(vlan_instance, state))
 
         # Add a QCheckBox for unicast_flood
         vlan_layout.addWidget(QLabel("Unicast Flood:"), row, 0)
@@ -318,25 +320,26 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         vlan_layout.addWidget(unicast_flood_checkbox, row, 1)
         row += 1
         # Slot function to update vlan.unicast_flood
-        def update_unicast_flood(state):
-            vlan.unicast_flood = bool(state)
+        def update_unicast_flood(vlan_instance, state):
+            vlan_instance.unicast_flood = bool(state)
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the stateChanged signal to the slot function
-        unicast_flood_checkbox.stateChanged.connect(update_unicast_flood)
+        unicast_flood_checkbox.stateChanged.connect(lambda state, vlan_instance=vlan: update_unicast_flood(vlan_instance, state))
         
         # Add a QSpinBox for vid
         vlan_layout.addWidget(QLabel("VID:"), row, 0)
         vid_spinbox = QSpinBox(vlan_groupbox)
         vid_spinbox.setRange(1, 4094)  # Assuming VLAN IDs range from 1 to 4094
         vid_spinbox.setValue(vlan.vid)
+        vid_spinbox.setFixedWidth(90)
         vlan_layout.addWidget(vid_spinbox, row, 1)
         row += 1
         # Slot function to update vlan.vid
-        def update_vid(value):
-            vlan.vid = value
+        def update_vid(vlan_instance, value):
+            vlan_instance.vid = value
             globals.unsaved_changes = True  # Mark as unsaved changes
         # Connect the valueChanged signal to the slot function
-        vid_spinbox.valueChanged.connect(update_vid)
+        vid_spinbox.valueChanged.connect(lambda value, vlan_instance=vlan: update_vid(vlan_instance, value))
 
         # Add Static Routes group box
         routes_groupbox = QGroupBox("Static Routes", vlan_groupbox)        
