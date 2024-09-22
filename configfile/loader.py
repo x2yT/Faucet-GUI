@@ -31,13 +31,13 @@ def load_vlan(data):
         ],
         acl_in=data.get('acl_in', None),
         dot1x_assigned=data.get('dot1x_assigned', False),
-        max_hosts=data.get('max_hosts', 255),
-        minimum_ip_size_check=data.get('minimum_ip_size_check', True),
+        max_hosts=data.get('max_hosts', 0),
+        minimum_ip_size_check=data.get('minimum_ip_size_check', False),
         name=data.get('name', ''),
-        proactive_arp_limit=data.get('proactive_arp_limit', 2052),
-        proactive_nd_limit=data.get('proactive_nd_limit', 2052),
+        proactive_arp_limit=data.get('proactive_arp_limit', 0),
+        proactive_nd_limit=data.get('proactive_nd_limit', 0),
         targeted_gw_resolution=data.get('targeted_gw_resolution', False),
-        unicast_flood=data.get('unicast_flood', True)
+        unicast_flood=data.get('unicast_flood', False)
     )
 
 def load_router(data):

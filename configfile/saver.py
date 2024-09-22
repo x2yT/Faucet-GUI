@@ -7,8 +7,9 @@ from models.config import Config
 from models.meter import Meter  # Import Meter class
 
 # Custom representer for Vlan objects
+# Custom representer for Vlan objects
 def vlan_representer(dumper, data):
-    return dumper.represent_dict({
+    attributes = {
         'vid': data.vid,
         'description': data.description,
         'acls_in': data.acls_in,
@@ -24,7 +25,12 @@ def vlan_representer(dumper, data):
         'proactive_nd_limit': data.proactive_nd_limit,
         'targeted_gw_resolution': data.targeted_gw_resolution,
         'unicast_flood': data.unicast_flood
-    })
+    }
+    
+    # Filter out attributes with a value of None, 0, or False
+    filtered_attributes = {k: v for k, v in attributes.items() if v not in (None, 0, False, [])}
+    
+    return dumper.represent_dict(filtered_attributes)
 
 # Custom representer for Router objects
 def router_representer(dumper, data):
