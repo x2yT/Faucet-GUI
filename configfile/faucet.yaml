@@ -1,28 +1,26 @@
-include:
-    - acls.yaml
-
 vlans:
-    office:
-        vid: 100
-        description: "office network"
-        acls_in: [office-vlan-protect]
-        faucet_mac: "0e:00:00:00:10:01"
-        faucet_vips:
-            - '10.0.100.254/24'
-            - '2001:100::1/64'
-            - 'fe80::c00:00ff:fe00:1001/64'
-        routes:
-            - route:
-                  ip_dst: '192.168.0.0/24'
-                  ip_gw: '10.0.100.2'
-    guest:
-        vid: 200
-        description: "guest network"
-        faucet_mac: "0e:00:00:00:20:01"
-        faucet_vips:
-            - '10.0.200.254/24'
-            - '2001:200::1/64'
-            - 'fe80::c00:00ff:fe00:2001/64'
+  office:
+    vid: 100
+    description: "office network"
+    acls_in: [office-vlan-protect]
+    faucet_mac: "0e:00:00:00:10:01"
+    faucet_vips:
+      - '10.0.100.254/24'
+      - '2001:100::1/64'
+      - 'fe80::c00:00ff:fe00:1001/64'
+    routes:
+      - route:
+          ip_dst: '192.168.0.0/24'
+          ip_gw: '10.0.100.2'
+  guest:
+    vid: 200
+    description: "guest network"
+    faucet_mac: "0e:00:00:00:20:01"
+    faucet_vips:
+      - '10.0.200.254/24'
+      - '2001:200::1/64'
+      - 'fe80::c00:00ff:fe00:2001/64'
+
 routers:
     router1:
         vlans: [office, guest]
@@ -41,146 +39,137 @@ routers:
             as: 100
             connect_mode: "passive"
             neighbor_as: 100
-            routerid: "1.1.1.2"
-            server_addresses: ["127.0.0.2"]
-            neighbor_addresses: ["127.0.0.2"]
+            routerid: "1.1.1.1"
+            server_addresses: ["127.0.0.1"]
+            neighbor_addresses: ["127.0.0.1"]
             vlan: office
-            port: 9178
-dps:
-    sw1:
-        dp_id: 0x1
-        hardware: "Open vSwitch"
-        interfaces:
-            1:
-                name: "h1"
-                description: "host1 container"
-                native_vlan: office
-                acls_in: [access-port-protect]
-            2:
-                name: "h2"
-                description: "host2 container"
-                native_vlan: office
-                acls_in: [access-port-protect]
-            3:
-                name: "g1"
-                description: "guest1 container"
-                native_vlan: guest
-                acls_in: [access-port-protect]
-            4:
-                name: "s1"
-                description: "services container"
-                native_vlan: office
-                acls_in: [service-port-protect]
-            5:
-                name: "trunk"
-                description: "VLAN trunk to sw2"
-                tagged_vlans: [office]
-                acls_in: [access-port-protect]
-    sw2:
-        dp_id: 0x2
-        hardware: "Allied-Telesis"
-        interfaces:
-            1:
-                name: "pi"
-                description: "raspberry pi"
-                native_vlan: office
-                acls_in: [access-port-protect]
-            2:
-                name: "laptop"
-                description: "guest laptop"
-                native_vlan: guest
-                acls_in: [access-port-protect]
-            4:
-                name: "s1"
-                description: "services Laptop"
-                native_vlan: guest
-                acls_in: [access-port-protect]
-            24:
-                name: "trunk"
-                description: "VLAN trunk to sw1"
-=======
- sections ---
-include:
-    - acls.yaml
-
-vlans:
-    office:
-        vid: 100
-        description: "office network"
-        acls_in: [office-vlan-protect]
-        faucet_mac: "0e:00:00:00:10:01"
-        faucet_vips:
-            - '10.0.100.254/24'
-            - '2001:100::1/64'
-            - 'fe80::c00:00ff:fe00:1001/64'
-        routes:
-            - route:
-                  ip_dst: '192.168.0.0/24'
-                  ip_gw: '10.0.100.2'
-    guest:
-        vid: 200
-        description: "guest network"
-        faucet_mac: "0e:00:00:00:20:01"
-        faucet_vips:
-            - '10.0.200.254/24'
-            - '2001:200::1/64'
-            - 'fe80::c00:00ff:fe00:2001/64'
-
-routers:
-    router-office-guest:
-        vlans: [office, guest]
+            port: 9179
 
 dps:
-    sw1:
-        dp_id: 0x1
-        hardware: "Open vSwitch"
-        interfaces:
-            1:
-                name: "h1"
-                description: "host1 container"
-                native_vlan: office
-                acls_in: [access-port-protect]
-            2:
-                name: "h2"
-                description: "host2 container"
-                native_vlan: office
-                acls_in: [access-port-protect]
-            3:
-                name: "g1"
-                description: "guest1 container"
-                native_vlan: guest
-                acls_in: [access-port-protect]
-            4:
-                name: "s1"
-                description: "services container"
-                native_vlan: office
-                acls_in: [service-port-protect]
-            5:
-                name: "trunk"
-                description: "VLAN trunk to sw2"
-                tagged_vlans: [office]
-                acls_in: [access-port-protect]
-    sw2:
-        dp_id: 0x2
-        hardware: "Allied-Telesis"
-        interfaces:
-            1:
-                name: "pi"
-                description: "raspberry pi"
-                native_vlan: office
-                acls_in: [access-port-protect]
-            2:
-                name: "laptop"
-                description: "guest laptop"
-                native_vlan: guest
-                acls_in: [access-port-protect]
-            4:
-                name: "s1"
-                description: "services Laptop"
-                native_vlan: guest
-                acls_in: [access-port-protect]
-            24:
-                name: "trunk"
-                description: "VLAN trunk to sw1"
->>>>>>> 3508a699cb3b3084ed8ee2b733643c54a21b8047
-                tagged_vlans: [office, guest]
+  sw1:
+    dp_id: 0x1
+    hardware: "Open vSwitch"
+    interfaces:
+      1:
+        name: "h1"
+        description: "host1 container"
+        native_vlan: office
+        acls_in: [access-port-protect]
+      2:
+        name: "h2"
+        description: "host2 container"
+        native_vlan: office
+        acls_in: [access-port-protect]
+      3:
+        name: "g1"
+        description: "guest1 container"
+        native_vlan: guest
+        acls_in: [access-port-protect]
+      4:
+        name: "s1"
+        description: "services container"
+        native_vlan: office
+        acls_in: [service-port-protect]
+      5:
+        name: "trunk"
+        description: "VLAN trunk to sw2"
+        tagged_vlans: [office]
+        acls_in: [access-port-protect]
+  sw2:
+    dp_id: 0x2
+    hardware: "Allied-Telesis"
+    interfaces:
+      1:
+        name: "pi"
+        description: "raspberry pi"
+        native_vlan: office
+        acls_in: [access-port-protect]
+      2:
+        name: "laptop"
+        description: "guest laptop"
+        native_vlan: guest
+        acls_in: [access-port-protect]
+      4:
+        name: "s1"
+        description: "services Laptop"
+        native_vlan: guest
+        acls_in: [access-port-protect]
+      24:
+        name: "trunk"
+        description: "VLAN trunk to sw1"
+        tagged_vlans: [office, guest]
+acls:
+  office-vlan-protect:
+    - rule:
+        dl_type: 0x800
+        ipv4_src: 10.0.100.0/24
+        ipv4_dst: 10.0.200.0/24
+        actions:
+          allow: 0
+    - rule:
+        actions:
+          allow: 1
+  access-port-protect:
+    - rule:
+        dl_type: 0x800
+        nw_proto: 177
+        udp_src: 67
+        udp_dst: 6877
+        actions:
+          allow: 0
+    - rule:
+        dl_type: 0x86dd
+        nw_proto: 17
+        udp_src: 547
+        udp_dst: 546
+        actions:
+          allow: 0
+    - rule:
+        dl_type: 0x86dd
+        nw_proto: 58
+        icmpv6_type: 134
+        actions:
+          allow: 0
+    - rule:
+        dl_type: 0x800
+        nw_proto: 6
+        tcp_dst: 25
+        actions:
+          allow: 0
+    - rule:
+        dl_type: 0x800
+        nw_proto: 17
+        udp_dst: 53
+        actions:
+          output:
+            set_fields:
+              - eth_dst: "72:b8:3c:4c:dc:4d"
+            port: "s1"
+    - rule:
+        dl_type: 0x800
+        nw_proto: 6
+        tcp_dst: 53
+        actions:
+          output:
+            set_fields:
+              - eth_dst: "72:b8:3c:4c:dc:4d"
+            port: "s1"
+    - rule:
+        actions:
+          allow: 1
+  service-port-protect:
+    - rule:
+        dl_type: 0x86dd
+        nw_proto: 58
+        icmpv6_type: 134
+        actions:
+          allow: 0
+    - rule:
+        dl_type: 0x800
+        nw_proto: 6
+        tcp_dst: 25
+        actions:
+          allow: 0
+    - rule:
+        actions:
+          allow: 1
