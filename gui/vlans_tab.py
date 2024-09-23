@@ -203,7 +203,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         row += 1
         # Slot function to update vlan.acls_in with the description
         def update_description(vlan_instance, text):
-            vlan_instance.description = [text]
+            vlan_instance.description = text
             globals.unsaved_changes = True  # Mark as unsaved changes
             print("Unsaved Changed=" + str(globals.unsaved_changes))
         description_edit.textChanged.connect(lambda text, vlan_instance=vlan: update_description(vlan_instance, text))
