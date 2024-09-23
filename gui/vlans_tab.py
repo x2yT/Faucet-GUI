@@ -2,6 +2,7 @@
 
 from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit, QLabel, QVBoxLayout, QCheckBox, QSpinBox, QHBoxLayout, QPushButton, QScrollArea, QMessageBox, QSizePolicy
 from configfile.loader import new_config, Vlan  # Assuming new_config is imported from loader.py
+from models.vlan import Route
 import globals
 
 # Define a dialog class for adding routes
@@ -62,7 +63,7 @@ def add_route(config, routes_groupbox, vlan_name):
             print(*vlan.routes, sep=", ")
             # Add the new route to the VLAN's routes
             vlan.routes.append({'ip_dst': ip_dst, 'ip_gw': ip_gw})
-            print(*vlan.routes, sep=", ")
+            print(f"Updated routes: {vlan.routes}")
 
             # Update the routes_groupbox UI
             route_row = routes_groupbox.layout().rowCount()
@@ -342,6 +343,7 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         vid_spinbox.valueChanged.connect(lambda value, vlan_instance=vlan: update_vid(vlan_instance, value))
 
         # Add Static Routes group box
+        print(f"current routes: {vlan.routes}")
         routes_groupbox = QGroupBox("Static Routes", vlan_groupbox)        
         # Set the font size and weight for the QGroupBox title
         routes_groupbox.setStyleSheet("QGroupBox { font-size: 10pt; font-weight: bold; }")

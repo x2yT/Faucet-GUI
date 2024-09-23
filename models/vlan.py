@@ -3,6 +3,9 @@ class Route:
         self.ip_dst = ip_dst
         self.ip_gw = ip_gw
 
+    def __repr__(self):
+        return f"Route(ip_dst='{self.ip_dst}', ip_gw='{self.ip_gw}')"
+
 class Vlan:
     # def __init__(self, vid, description='', acls_in=None, faucet_mac='', faucet_vips=None, routes=None,
     #              acl_in=None, dot1x_assigned=False, max_hosts=255, minimum_ip_size_check=True, name='',

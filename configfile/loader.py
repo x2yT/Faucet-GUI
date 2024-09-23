@@ -210,6 +210,7 @@ def load_config(yaml_file, ):
     try:
         vlans = {k: load_vlan(v) for k, v in data.get('vlans', {}).items()}
         vlans_loaded = True
+        print("VLANs loaded")
     except Exception as e:
         print(f"Failed to load vlans: {e}")
 

@@ -1,5 +1,5 @@
 import yaml
-from models.vlan import Vlan
+from models.vlan import Vlan, Route
 from models.router import Router, Bgp
 from models.dp import DP, Interface
 from models.acls import ACL, Rule, Action, OutputAction, TunnelAction
@@ -15,7 +15,7 @@ def vlan_representer(dumper, data):
         'acls_in': data.acls_in,
         'faucet_mac': data.faucet_mac,
         'faucet_vips': data.faucet_vips,
-        'routes': data.routes,
+        'routes': [{'route': {'ip_dst': route.ip_dst, 'ip_gw': route.ip_gw}} for route in data.routes],
         'acl_in': data.acl_in,
         'dot1x_assigned': data.dot1x_assigned,
         'max_hosts': data.max_hosts,
@@ -212,6 +212,9 @@ def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=
     data_to_save = {}
     
     if save_vlans:
+        # Convert route dictionaries back into Route objects
+        for vlan in config.vlans.values():
+            vlan.routes = [Route(route['ip_dst'], route['ip_gw']) for route in vlan.routes]
         data_to_save['vlans'] = config.vlans
     if save_routers:
         data_to_save['routers'] = config.routers
