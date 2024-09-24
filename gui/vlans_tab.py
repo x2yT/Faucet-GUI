@@ -177,7 +177,6 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         # Connect the editingFinished signal to the update_vlan_name slot
         vlan_name_edit.editingFinished.connect(lambda old_name=name, edit=vlan_name_edit, groupbox=vlan_groupbox: update_vlan_name(old_name, edit.text(), groupbox))
 
-        
         # Check if acl_in is present and add it to the form if it has data
         if vlan.acl_in:
             # acl_in is deprecated, only show it if the file we read from has a value in it
@@ -358,9 +357,6 @@ def create_vlans_tab(config, vlans_layout=None, scroll_area=None):
         #print('vlan.name=' + name)
         add_route_button.clicked.connect(lambda _, vlan_name=name, routes_groupbox=routes_groupbox: create_add_route_handler(vlan_name, routes_groupbox)())
         route_row += 1
-
-        # Print the number of items in vlan.routes before populating widgets
-        ####print(f"Number of routes in vlan.routes before populating widgets: {len(vlan.routes)}")
 
         # Slot functions to update vlan.routes
         def update_ip_dst(vlan, index, text):

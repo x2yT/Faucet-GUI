@@ -5,6 +5,77 @@ from configfile.loader import new_config, ACL, Rule  # Assuming new_config is im
 import globals
 from models.dp import DP, Interface
 
+DISPLAY_NAMES = {
+    'acl_in': 'ACL In',
+    'acls_in': 'ACLs In',
+    'advertise_interval': 'Advertise Interval',
+    'arp_neighbor_timeout': 'ARP Neighbour Timeout',
+    'auth_acl': 'Auth ACL',
+    'description': 'Description',
+    'dot1x': 'Dot1x',
+    'dot1x_acl': 'Dot1x ACL',
+    'dot1x_assigned': 'Dotlx Assigned',
+    'dot1x_mab': 'Dot1x Mab',
+    'down_time_multiple': 'Downtime Multiple',
+    'dp': 'DP',
+    'dp_id': 'DP Id',
+    'drop_broadcast_source_address': 'Drop Broadcast Source Address',
+    'drop_spoofed_faucet_mac': 'Drop Spoofed Faucet MAC',
+    'enable': 'Enable',
+    'enabled': 'Enabled',
+    'global_vlan': 'Global VLAN',
+    'group_table': 'Group Table',
+    'hairpin': 'Hairpin',
+    'hardware': 'Hardware',
+    'high_priority': 'High Priority',
+    'highest_priority': 'Highest Priority',
+    'ignore_learn_ins': 'Ignore Learn Ins',
+    'info': 'info',
+    'learn_ban_timeout': 'Learn Ban Timeout',
+    'max_host_fib_retry_count': 'Max Hosr FIB Retry Count',
+    'max_hosts': 'Max Hosts',
+    'max_hosts_per_resolve_cycle': 'Max Hosts Per Resolve Cycle',
+    'max_per_interval': 'Max Per Interval',
+    'max_resolve_backoff_time': 'Max Resolve Backoff Seconds',
+    'metrics_rate_limit_sec': 'Metric Rate Limit Seconds',
+    'min_lacp_health': 'Mon LACP Health',
+    'min_stack_health': 'Min Stack Health',
+    'mirror': 'Mirror',
+    'name': 'Name',
+    'native_vlan': 'Native VLAN',
+    'nfv_intf': 'NFV Intf',
+    'nfv_sw_port': 'NFV SW Port',
+    'noauth_acl': 'No Auth ACL',
+    'number': 'Number',
+    'ofchannel_log': 'Of Channel Log',
+    'opstatus_reconf': 'OP Staus Reconf',
+    'org_tlvs': 'Org TLVs',
+    'oui': 'OUI',
+    'output_only': 'Output Only',
+    'packetin_pps': 'Packet In PPS',
+    'permanent_learn': 'Permanent Learn',
+    'port': 'Port',
+    'port_descr': 'Port Description',
+    'port_table_scale_factor': 'Port Table Scale Factor',
+    'priority': 'Priority',
+    'priority_offset': 'Priority Offset',
+    'proactive_learn_v4': 'Proactive Learn V4',
+    'proactive_learn_v6': 'Proactive Learn V6',
+    'radius_ip': 'Radius IP',
+    'radius_port': 'Radius Port',
+    'radius_secret': 'Radius Secret',
+    'restricted_bcast_arpnd': 'Restricted BCast ARPND',
+    'send_interval': 'Send Interval',
+    'slowpath_pps': 'Slowpath PPS',
+    'subtype': 'Subtype',
+    'system_name': 'System Name',
+    'table_sizes': 'Table Sizes',  # Assuming table_sizes is a JSON string
+    'tagged_vlans': 'Tagged VLANs',
+    'timeout': 'Timeout',
+    'unicast_flood': 'Unicast Flood',
+    'use_idle_timeout': 'Use Idle Timeout'
+}
+
 def refresh_dps_tab(config, dps_layout):
     # Clear the existing layout
     print('refresh_dps_tab ...')
@@ -59,7 +130,9 @@ def add_dp(config, dps_tab, dps_layout):
     row = 1
     col = 0
     for field, widget in fields.items():
-        label = QLabel(field)
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
         form_layout.addWidget(label, row, col)
         form_layout.addWidget(widget, row, col + 1)
         col += 2
@@ -170,7 +243,9 @@ def edit_dp(config, dp, dps_layout):
     row = 1
     col = 0
     for field, widget in fields.items():
-        label = QLabel(field)
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
         form_layout.addWidget(label, row, col)
         form_layout.addWidget(widget, row, col + 1)
         col += 2
@@ -192,7 +267,7 @@ def edit_dp(config, dp, dps_layout):
         }
 
     # Create dot1x group box and layout
-    dot1x_group_box = QGroupBox("dot1x")
+    dot1x_group_box = QGroupBox("Dot1x")
     dot1x_layout = QGridLayout()
     dot1x_fields = {
         'nfv_intf': QLineEdit(),
@@ -230,7 +305,9 @@ def edit_dp(config, dp, dps_layout):
     dot1x_row = 0
     dot1x_col = 0
     for field, widget in dot1x_fields.items():
-        label = QLabel(field)
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
         dot1x_layout.addWidget(label, dot1x_row, dot1x_col)
         dot1x_layout.addWidget(widget, dot1x_row, dot1x_col + 1)
         dot1x_col += 2
@@ -284,7 +361,9 @@ def edit_dp(config, dp, dps_layout):
     lldp_row = 0
     lldp_col = 0
     for field, widget in lldp_fields.items():
-        label = QLabel(field)
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
         lldp_layout.addWidget(label, lldp_row, lldp_col)
         lldp_layout.addWidget(widget, lldp_row, lldp_col + 1)
         lldp_col += 2
@@ -339,7 +418,9 @@ def edit_dp(config, dp, dps_layout):
     stack_row = 0
     stack_col = 0
     for field, widget in stack_fields.items():
-        label = QLabel(field)
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
         stack_layout.addWidget(label, stack_row, stack_col)
         stack_layout.addWidget(widget, stack_row, stack_col + 1)
         stack_col += 2
@@ -518,7 +599,9 @@ def show_add_interface_dialog(config, dp, dps_layout):
     row = 2
     col = 0
     for field, widget in fields.items():
-        label = QLabel(field)
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
         form_layout.addWidget(label, row, col)
         form_layout.addWidget(widget, row, col + 1)
         col += 2
@@ -539,7 +622,9 @@ def show_add_interface_dialog(config, dp, dps_layout):
     lldp_row = 0
     lldp_col = 0
     for field, widget in lldp_beacon_fields.items():
-        label = QLabel(field)
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
         lldp_beacon_layout.addWidget(label, lldp_row, lldp_col)
         lldp_beacon_layout.addWidget(widget, lldp_row, lldp_col + 1)
         lldp_col += 2
@@ -562,7 +647,9 @@ def show_add_interface_dialog(config, dp, dps_layout):
     org_tlvs_row = 0
     org_tlvs_col = 0
     for field, widget in org_tlvs_fields.items():
-        label = QLabel(field)
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
         org_tlvs_layout.addWidget(label, org_tlvs_row, org_tlvs_col)
         org_tlvs_layout.addWidget(widget, org_tlvs_row, org_tlvs_col + 1)
         if isinstance(widget, QLineEdit):
@@ -588,7 +675,9 @@ def show_add_interface_dialog(config, dp, dps_layout):
     stack_row = 0
     stack_col = 0
     for field, widget in stack_fields.items():
-        label = QLabel(field)
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
         stack_layout.addWidget(label, stack_row, stack_col)
         stack_layout.addWidget(widget, stack_row, stack_col + 1)
         stack_col += 2
@@ -797,7 +886,9 @@ def create_dps_tab(config, dps_layout=None):
                         for iface_attr, iface_value in iface.__dict__.items():
                             # Exclude empty items
                             if iface_value is not None and iface_value != [] and iface_value != {}:
-                                iface_label = QLabel(iface_attr)
+                                # Lookup display name for the attribute
+                                display_name = DISPLAY_NAMES.get(iface_attr, iface_attr)  # Fallback to attr if not found
+                                iface_label = QLabel(display_name)
                                 if isinstance(iface_value, bool):
                                     iface_widget = QCheckBox()
                                     iface_widget.setChecked(iface_value)
@@ -817,7 +908,7 @@ def create_dps_tab(config, dps_layout=None):
                                     iface_widget.setFixedWidth(200)
                                 elif isinstance(iface_value, dict) and iface_attr == 'lldp_beacon':
                                     iface_row += 1
-                                    lldp_label = QLabel("lldp")
+                                    lldp_label = QLabel("LLDP")
                                     iface_layout.addWidget(lldp_label, iface_row, 0)
                                     lldp_group_box = QGroupBox()
                                     lldp_group_box.setStyleSheet("QGroupBox { font-size: 10pt; font-weight: bold; }")
@@ -825,7 +916,9 @@ def create_dps_tab(config, dps_layout=None):
                                     lldp_row = 0
                                     lldp_col = 0
                                     for lldp_attr, lldp_value in iface_value.items():
-                                        lldp_attr_label = QLabel(lldp_attr)
+                                        # Lookup display name for the attribute
+                                        display_name = DISPLAY_NAMES.get(lldp_attr, lldp_attr)  # Fallback to attr if not found
+                                        lldp_attr_label = QLabel(display_name)
                                         if isinstance(lldp_value, bool):
                                             lldp_widget = QCheckBox()
                                             lldp_widget.setChecked(lldp_value)
@@ -926,7 +1019,7 @@ def create_dps_tab(config, dps_layout=None):
                 elif attr == 'dot1x' and isinstance(value, dict):
                     print('dot1x')
                     row += 1
-                    dot1x_label = QLabel("dot1x")
+                    dot1x_label = QLabel("Dot1x")
                     dot1x_label.setStyleSheet("font-weight: bold;")
                     grid_layout.addWidget(dot1x_label, row, 0, 1, 2)
                     dot1x_group_box = QGroupBox() 
@@ -958,7 +1051,9 @@ def create_dps_tab(config, dps_layout=None):
                     dot1x_row = 0
                     dot1x_col = 0                       
                     for dot1x_attr, dot1x_value in value.items():
-                        dot1x_label = QLabel(dot1x_attr)
+                        # Lookup display name for the attribute
+                        display_name = DISPLAY_NAMES.get(dot1x_attr, dot1x_attr)  # Fallback to attr if not found
+                        dot1x_label = QLabel(display_name)
                         if isinstance(dot1x_value, bool):
                             dot1x_widget = QCheckBox()
                             dot1x_widget.setChecked(dot1x_value)
@@ -997,7 +1092,7 @@ def create_dps_tab(config, dps_layout=None):
                 elif attr == 'lldp_beacon' and isinstance(value, dict):
                     print('lldp_beacon')
                     row += 1
-                    lldp_label = QLabel("lldp")
+                    lldp_label = QLabel("LLDP")
                     lldp_label.setStyleSheet("font-weight: bold;")
                     grid_layout.addWidget(lldp_label, row, 0, 1, 2)
                     lldp_group_box = QGroupBox() 
@@ -1029,8 +1124,9 @@ def create_dps_tab(config, dps_layout=None):
                     lldp_row = 0
                     lldp_col = 0                       
                     for lldp_attr, lldp_value in value.items():
-
-                        lldp_label = QLabel(lldp_attr)
+                        # Lookup display name for the attribute
+                        display_name = DISPLAY_NAMES.get(lldp_attr, lldp_attr)  # Fallback to attr if not found
+                        lldp_label = QLabel(display_name)
                         if isinstance(lldp_value, bool):
                             lldp_widget = QCheckBox()
                             lldp_widget.setChecked(lldp_value)
@@ -1071,7 +1167,7 @@ def create_dps_tab(config, dps_layout=None):
                 elif attr == 'stack' and isinstance(value, dict):
                     print('Stack')
                     row += 1
-                    stack_label = QLabel("stack")
+                    stack_label = QLabel("Stack")
                     stack_label.setStyleSheet("font-weight: bold;")
                     grid_layout.addWidget(stack_label, row, 0, 1, 2)
                     stack_group_box = QGroupBox() 
@@ -1103,8 +1199,9 @@ def create_dps_tab(config, dps_layout=None):
                     stack_row = 0
                     stack_col = 0                       
                     for stack_attr, stack_value in value.items():
-
-                        stack_label = QLabel(stack_attr)
+                        # Lookup display name for the attribute
+                        display_name = DISPLAY_NAMES.get(stack_attr, stack_attr)  # Fallback to attr if not found
+                        stack_label = QLabel(display_name)
                         if isinstance(stack_value, bool):
                             stack_widget = QCheckBox()
                             stack_widget.setChecked(stack_value)
@@ -1142,8 +1239,10 @@ def create_dps_tab(config, dps_layout=None):
 
                         stack_group_box.setLayout(stack_layout)
                         grid_layout.addWidget(stack_group_box, row, 1, 1, 3)
-                else:
-                    label = QLabel(attr)
+                else: 
+                    # Lookup display name for the attribute
+                    display_name = DISPLAY_NAMES.get(attr, attr)  # Fallback to attr if not found
+                    label = QLabel(display_name)
                     label.setFixedWidth(150)
                     if isinstance(value, bool):
                         widget = QCheckBox()
