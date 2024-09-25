@@ -885,6 +885,7 @@ def create_dps_tab(config, dps_layout=None):
                         iface_col = 0
                         for iface_attr, iface_value in iface.__dict__.items():
                             # Exclude empty items
+
                             if iface_value is not None and iface_value != [] and iface_value != {}:
                                 # Lookup display name for the attribute
                                 display_name = DISPLAY_NAMES.get(iface_attr, iface_attr)  # Fallback to attr if not found
@@ -908,17 +909,22 @@ def create_dps_tab(config, dps_layout=None):
                                     iface_widget.setFixedWidth(200)
                                 elif isinstance(iface_value, dict) and iface_attr == 'lldp_beacon':
                                     iface_row += 1
-                                    lldp_label = QLabel("LLDP")
-                                    iface_layout.addWidget(lldp_label, iface_row, 0)
-                                    lldp_group_box = QGroupBox()
+                                    print(f'lldp_beacon value={iface_value}')
+                                    #lldp_label = QLabel("LLDP")
+                                    #iface_layout.addWidget(lldp_label, iface_row, 0)
+                                    lldp_group_box = QGroupBox("LLDP")
                                     lldp_group_box.setStyleSheet("QGroupBox { font-size: 10pt; font-weight: bold; }")
                                     lldp_layout = QGridLayout()
                                     lldp_row = 0
                                     lldp_col = 0
                                     for lldp_attr, lldp_value in iface_value.items():
+                                        if lldp_attr == 'org_tlvs':
+                                            print(f'org_tlvs value={lldp_value}')
+                                            print('attr=' + lldp_attr, type(lldp_value))
                                         # Lookup display name for the attribute
-                                        display_name = DISPLAY_NAMES.get(lldp_attr, lldp_attr)  # Fallback to attr if not found
-                                        lldp_attr_label = QLabel(display_name)
+                                        if lldp_attr != 'org_tlvs':
+                                            display_name = DISPLAY_NAMES.get(lldp_attr, lldp_attr)  # Fallback to attr if not found
+                                            lldp_attr_label = QLabel(display_name)
                                         if isinstance(lldp_value, bool):
                                             lldp_widget = QCheckBox()
                                             lldp_widget.setChecked(lldp_value)
@@ -939,19 +945,68 @@ def create_dps_tab(config, dps_layout=None):
                                             lldp_widget.setText(lldp_value)
                                             lldp_widget.setFixedWidth(200)
                                             lldp_widget.textChanged.connect(lambda text, iface_value=iface_value, a=lldp_attr: update_lldp_str(iface_value, a, text))
-                                        elif isinstance(lldp_value, list):
-                                            # add the list item on its own row
-                                            if lldp_col > 0:
-                                                lldp_col = 0
+                                        elif isinstance(lldp_value, list) and lldp_attr == 'org_tlvs':
+                                            print('Starting org_tlvs')
+                                            for tlv_index, tlv in enumerate(lldp_value):
+                                                if lldp_col > 0:
+                                                    lldp_col = 0
+                                                    lldp_row += 1
+                                                tlv_group_box = QGroupBox("TLV")
+                                                tlv_layout = QGridLayout()
+                                                tlv_row = 0
+                                                tlv_col = 0                                               
+
+                                                # Function to delete TLV and refresh the tab
+                                                def delete_tlv(lldp_value, tlv_index):
+                                                    del lldp_value[tlv_index]                                
+                                                    refresh_dps_tab(config, dps_layout)
+
+                                                # Add Delete TLV button
+                                                delete_button = QPushButton("Delete TLV")
+                                                delete_button.clicked.connect(lambda _, f=lldp_value, i=tlv_index: delete_tlv(f, i))
+                                                tlv_layout.addWidget(delete_button, tlv_row, tlv_col, 1, 2)
+                                                tlv_row += 1
+
+                                                for tlv_attr, tlv_value in tlv.items():
+                                                    tlv_display_name = DISPLAY_NAMES.get(tlv_attr, tlv_attr)
+                                                    tlv_attr_label = QLabel(tlv_display_name)
+                                                    if isinstance(tlv_value, bool):
+                                                        tlv_widget = QCheckBox()
+                                                        tlv_widget.setChecked(tlv_value)
+                                                        tlv_widget.stateChanged.connect(lambda state, iface_value=iface_value, a=tlv_attr, i=tlv_index: update_lldp_bool(iface_value['org_tlvs'][i], a, state))
+                                                    elif isinstance(tlv_value, int):
+                                                        tlv_widget = QSpinBox()
+                                                        tlv_widget.setRange(0, 9999)
+                                                        tlv_widget.setValue(tlv_value)
+                                                        tlv_widget.setMinimumWidth(100)
+                                                        tlv_widget.valueChanged.connect(lambda val, iface_value=iface_value, a=tlv_attr, i=tlv_index: update_lldp_int(iface_value['org_tlvs'][i], a, val))
+                                                    elif isinstance(tlv_value, float):
+                                                        tlv_widget = QDoubleSpinBox()
+                                                        tlv_widget.setRange(0, 9999)
+                                                        tlv_widget.setValue(tlv_value)
+                                                        tlv_widget.valueChanged.connect(lambda val, iface_value=iface_value, a=tlv_attr, i=tlv_index: update_lldp_float(iface_value['org_tlvs'][i], a, val))
+                                                    elif isinstance(tlv_value, str):
+                                                        tlv_widget = QLineEdit()
+                                                        tlv_widget.setText(tlv_value)
+                                                        tlv_widget.setFixedWidth(140)
+                                                        tlv_widget.textChanged.connect(lambda text, iface_value=iface_value, a=tlv_attr, i=tlv_index: update_lldp_str(iface_value['org_tlvs'][i], a, text))
+                                                    else:
+                                                        tlv_widget = QLabel(str(tlv_value))  # Fallback for other types
+
+                                                    tlv_layout.addWidget(tlv_attr_label, tlv_row, tlv_col)
+                                                    tlv_layout.addWidget(tlv_widget, tlv_row, tlv_col + 1)
+                                                    tlv_col += 2
+                                                    # if tlv_col >= 3:
+                                                    #     tlv_row += 1                                                
+
+                                                tlv_group_box.setLayout(tlv_layout)
+                                                lldp_layout.addWidget(tlv_group_box, lldp_row, lldp_col, 1, 4)
                                                 lldp_row += 1
-                                            lldp_widget = QLineEdit()
-                                            lldp_widget.setText(", ".join(map(str, lldp_value)))  # Convert list to comma-separated string
-                                            lldp_widget.setFixedWidth(400)
-                                            lldp_widget.textChanged.connect(lambda text, iface_value=iface_value, a=lldp_attr: update_lldp_list(iface_value, a, text))
                                         else:
                                             lldp_widget = QLabel(str(lldp_value))  # Fallback for other types
 
-                                        lldp_layout.addWidget(lldp_attr_label, lldp_row, lldp_col)
+                                        if lldp_attr != 'org_tlvs':
+                                            lldp_layout.addWidget(lldp_attr_label, lldp_row, lldp_col)
                                         lldp_layout.addWidget(lldp_widget, lldp_row, lldp_col + 1)
                                         lldp_col += 2
                                         if lldp_col >= 4:  # Move to next row after 2 attributes
@@ -959,7 +1014,7 @@ def create_dps_tab(config, dps_layout=None):
                                             lldp_row += 1
 
                                     lldp_group_box.setLayout(lldp_layout)
-                                    iface_layout.addWidget(lldp_group_box, iface_row, 1, 1, 3)
+                                    iface_layout.addWidget(lldp_group_box, iface_row, 0, 1, 4)
                                     iface_row += 1
                                     continue  # Skip adding the lldp_beacon as a regular attribute
                                 else:
