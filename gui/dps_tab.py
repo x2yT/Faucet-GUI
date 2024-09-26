@@ -30,8 +30,10 @@ DISPLAY_NAMES = {
     'high_priority': 'High Priority',
     'highest_priority': 'Highest Priority',
     'ignore_learn_ins': 'Ignore Learn Ins',
-    'info': 'info',
+    'info': 'Info',
     'learn_ban_timeout': 'Learn Ban Timeout',
+    'loop_protect': 'Loop Protect',
+    'loop_protect_external': 'Loop Protect External',
     'max_host_fib_retry_count': 'Max Hosr FIB Retry Count',
     'max_hosts': 'Max Hosts',
     'max_hosts_per_resolve_cycle': 'Max Hosts Per Resolve Cycle',
@@ -789,7 +791,59 @@ def delete_interface(config, dp, iface_key, dps_layout):
     if ret == QMessageBox.StandardButton.Ok:
         del dp.interfaces[iface_key]
         globals.unsaved_changes = True
+        refresh_dps_tab(config, dps_layout)        
+
+# Function to add a new TLV
+def add_tlv(lldp_beacon, config, dps_layout):
+    dialog = QDialog()
+    dialog.setWindowTitle("Add TLV")
+    layout = QVBoxLayout()
+
+    # Info field
+    info_label = QLabel("Info:")
+    info_input = QLineEdit()
+    layout.addWidget(info_label)
+    layout.addWidget(info_input)
+
+    # OUI field
+    oui_label = QLabel("OUI:")
+    oui_input = QSpinBox()
+    oui_input.setRange(0, 999999)
+    layout.addWidget(oui_label)
+    layout.addWidget(oui_input)
+
+    # Subtype field
+    subtype_label = QLabel("Subtype:")
+    subtype_input = QSpinBox()
+    subtype_input.setRange(0, 255)
+    layout.addWidget(subtype_label)
+    layout.addWidget(subtype_input)
+
+    # OK and Cancel buttons
+    button_layout = QHBoxLayout()
+    ok_button = QPushButton("OK")
+    cancel_button = QPushButton("Cancel")
+    button_layout.addWidget(ok_button)
+    button_layout.addWidget(cancel_button)
+    layout.addLayout(button_layout)
+
+    dialog.setLayout(layout)
+
+    def on_ok():
+        new_tlv = {
+            "info": info_input.text(),
+            "oui": oui_input.value(),
+            "subtype": subtype_input.value()
+        }
+        print(f'lldp_beacon={lldp_beacon}')
+        lldp_beacon['org_tlvs'].append(new_tlv)
+        dialog.accept()
         refresh_dps_tab(config, dps_layout)
+
+    ok_button.clicked.connect(on_ok)
+    cancel_button.clicked.connect(dialog.reject)
+
+    dialog.exec()
 
 # Create the DPS tab.................
 def create_dps_tab(config, dps_layout=None):
@@ -917,6 +971,13 @@ def create_dps_tab(config, dps_layout=None):
                                     lldp_layout = QGridLayout()
                                     lldp_row = 0
                                     lldp_col = 0
+
+                                    # Add "Add TLV" button
+                                    add_tlv_button = QPushButton("Add TLV")
+                                    add_tlv_button.clicked.connect(lambda _, lldp_beacon=iface_value, config=config, dps_layout=dps_layout: add_tlv(lldp_beacon, config, dps_layout))
+                                    lldp_layout.addWidget(add_tlv_button, lldp_row, lldp_col, 1, 2)
+                                    lldp_row += 1
+
                                     for lldp_attr, lldp_value in iface_value.items():
                                         if lldp_attr == 'org_tlvs':
                                             print(f'org_tlvs value={lldp_value}')
