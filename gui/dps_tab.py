@@ -1234,8 +1234,15 @@ def create_dps_tab(config, dps_layout=None):
 
                                                 # Function to delete TLV and refresh the tab
                                                 def delete_tlv(lldp_value, tlv_index):
-                                                    del lldp_value[tlv_index]                                
-                                                    refresh_dps_tab(config, dps_layout)
+                                                    msg_box = QMessageBox()
+                                                    msg_box.setWindowTitle("Delete TLV")
+                                                    msg_box.setText("Press OK to delete this TLV")
+                                                    msg_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+                                                    msg_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
+                                                    
+                                                    if msg_box.exec() == QMessageBox.StandardButton.Ok:
+                                                        del lldp_value[tlv_index]
+                                                        refresh_dps_tab(config, dps_layout)
 
                                                 # Add Delete TLV button
                                                 delete_button = QPushButton("Delete TLV")
