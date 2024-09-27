@@ -78,9 +78,10 @@ DISPLAY_NAMES = {
     'use_idle_timeout': 'Use Idle Timeout'
 }
 
+# Refresh the tab with any changes in the dictionaries
 def refresh_dps_tab(config, dps_layout):
     # Clear the existing layout
-    print('refresh_dps_tab ...')
+    #print('refresh_dps_tab ...')
     for i in reversed(range(dps_layout.count())):
         widget = dps_layout.itemAt(i).widget()
         if widget is not None:
@@ -88,6 +89,7 @@ def refresh_dps_tab(config, dps_layout):
     # Recreate the DPS tab
     create_dps_tab(config, dps_layout)
 
+# Add a new DP instance
 def add_dp(config, dps_tab, dps_layout):
     dialog = QDialog()
     dialog.setWindowTitle("Add DP")
@@ -181,6 +183,7 @@ def add_dp(config, dps_tab, dps_layout):
     button_box.rejected.connect(dialog.reject)
     dialog.exec()
 
+# Edit the current DP showing all possible settings
 def edit_dp(config, dp, dps_layout):
     dialog = QDialog()
     dialog.setWindowTitle("Edit DP")
@@ -471,7 +474,7 @@ def save_dp_changes(dialog, fields, dot1x_fields, lldp_fields, stack_fields, dp,
                 setattr(dp, field, new_value)
                 changes_made = True
             elif getattr(dp, field) is None and new_value == 1:
-                print(field + 'Boolean new_value=' + str(new_value))
+                #print(field + 'Boolean new_value=' + str(new_value))
                 setattr(dp, field, new_value)
                 changes_made = True
 
@@ -560,6 +563,215 @@ def save_dp_changes(dialog, fields, dot1x_fields, lldp_fields, stack_fields, dp,
     dialog.accept()
     refresh_dps_tab(config, dps_layout)
 
+# Edit an existing Interface definition
+def show_edit_interface_dialog(config, dp, dps_layout, interface):
+    dialog = QDialog()
+    dialog.setWindowTitle("Edit Interface")
+    dialog_layout = QVBoxLayout()
+
+    form_layout = QGridLayout()
+
+    fields = {
+        #'acl_in': QLineEdit(),
+        'name': QLineEdit(),
+        'description': QLineEdit(),
+        'acls_in': QLineEdit(),
+        'dot1x': QCheckBox(),
+        'dot1x_acl': QCheckBox(),
+        'dot1x_mab': QCheckBox(),
+        'enabled': QCheckBox(),
+        'hairpin': QCheckBox(),
+        'loop_protect': QCheckBox(),
+        'loop_protect_external': QCheckBox(),
+        'max_hosts': QSpinBox(),
+        'mirror': QLineEdit(),
+        'native_vlan': QLineEdit(),
+        'number': QSpinBox(),
+        'opstatus_reconf': QCheckBox(),
+        'output_only': QCheckBox(),
+        'permanent_learn': QCheckBox(),
+        'tagged_vlans': QLineEdit(),
+        'unicast_flood': QCheckBox(),
+        'restricted_bcast_arpnd': QCheckBox()
+    }
+
+    row = 2
+    col = 0
+    for field, widget in fields.items():
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
+        form_layout.addWidget(label, row, col)
+
+        #print('Field=' + field)
+        if isinstance(widget, QLineEdit):
+            value = getattr(interface, field, "")
+            if isinstance(value, list):
+                # If its a list comma separate it
+                value = ", ".join(map(str, value))
+            widget.setText(value)
+            if field == 'acls_in' or field == 'description':
+                widget.setMinimumWidth(200)
+        elif isinstance(widget, QCheckBox):
+            value = getattr(interface, field, 0)            
+            widget.setChecked(False)
+            # if value == "" or value == "0":
+            #     widget.setChecked(False)
+            # else:
+            #     widget.setChecked(True)
+        elif isinstance(widget, QSpinBox):
+            value = getattr(interface, field, 0)
+            if value is None:
+                value = 0
+            widget.setValue(value)
+            
+        form_layout.addWidget(widget, row, col + 1)
+        col += 2
+        if col >= 4 or field == 'acls_in' or field == 'description':
+            col = 0
+            row += 1
+    row += 1
+    # Create lldp_beacon group box and layout
+    lldp_beacon_group_box = QGroupBox("LLDP")
+    lldp_beacon_layout = QGridLayout()
+    lldp_beacon_fields = {
+        'enable': QCheckBox(),
+        #'org_tlvs': QLineEdit(),
+        'port_descr': QLineEdit(),
+        'system_name': QLineEdit()
+    }
+
+    lldp_row = 0
+    lldp_col = 0
+    for field, widget in lldp_beacon_fields.items():
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
+        lldp_beacon_layout.addWidget(label, lldp_row, lldp_col)
+
+        # Populate the widget from the interface.lldp_beacon field
+        lldp_beacon = getattr(interface, 'lldp_beacon', {})
+        if field in lldp_beacon:
+            value = lldp_beacon[field]
+            
+            if isinstance(widget, QLineEdit):
+                widget.setText(value)
+            elif isinstance(widget, QCheckBox):
+                widget.setChecked(value)
+
+        lldp_beacon_layout.addWidget(widget, lldp_row, lldp_col + 1)
+        lldp_col += 2
+        if lldp_col >= 4:
+            lldp_col = 0
+            lldp_row += 1
+
+    lldp_beacon_group_box.setLayout(lldp_beacon_layout)
+    form_layout.addWidget(lldp_beacon_group_box, row, 0, 1, 4)
+
+    # Create org_tlvs group box and layout
+    lldp_beacon = getattr(interface, 'lldp_beacon', {})
+    org_tlvs_list = lldp_beacon.get('org_tlvs', None)
+
+    if org_tlvs_list is None:
+        # Display a single TLV group box if org_tlvs is None
+        org_tlvs_group_box = QGroupBox("TLV")
+        org_tlvs_layout = QGridLayout()
+        org_tlvs_fields = {
+            'info': QLineEdit(),
+            'oui': QSpinBox(),
+            'subtype': QSpinBox()
+        }
+
+        org_tlvs_row = 0
+        org_tlvs_col = 0
+        for field, widget in org_tlvs_fields.items():
+            # Lookup display name for the attribute
+            display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+            label = QLabel(display_name)
+            org_tlvs_layout.addWidget(label, org_tlvs_row, org_tlvs_col)
+            org_tlvs_layout.addWidget(widget, org_tlvs_row, org_tlvs_col + 1)
+            if isinstance(widget, QLineEdit):
+                widget.setMaximumWidth(120)
+            elif isinstance(widget, QSpinBox):
+                widget.setRange(0, 9999)
+            org_tlvs_col += 2
+
+        org_tlvs_group_box.setLayout(org_tlvs_layout)
+        lldp_row += 1
+        lldp_beacon_layout.addWidget(org_tlvs_group_box, lldp_row, 0, 1, 4)
+    else:
+        # Create a TLV group box for each item in the org_tlvs list
+        for tlv in org_tlvs_list:
+            org_tlvs_group_box = QGroupBox("TLV")
+            org_tlvs_layout = QGridLayout()
+            org_tlvs_fields = {
+                'info': QLineEdit(),
+                'oui': QSpinBox(),
+                'subtype': QSpinBox()
+            }
+
+            org_tlvs_row = 0
+            org_tlvs_col = 0
+            for field, widget in org_tlvs_fields.items():
+                # Lookup display name for the attribute
+                display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+                label = QLabel(display_name)
+                org_tlvs_layout.addWidget(label, org_tlvs_row, org_tlvs_col)
+                
+                if isinstance(widget, QLineEdit):
+                    widget.setMaximumWidth(120)
+                elif isinstance(widget, QSpinBox):
+                    widget.setRange(0, 9999)
+
+                if field in tlv:
+                    value = tlv[field]
+                    if isinstance(widget, QLineEdit):
+                        widget.setText(value)
+                    elif isinstance(widget, QSpinBox):
+                        widget.setValue(value)
+                org_tlvs_layout.addWidget(widget, org_tlvs_row, org_tlvs_col + 1)
+                org_tlvs_col += 2
+
+            org_tlvs_group_box.setLayout(org_tlvs_layout)
+            lldp_row += 1
+            lldp_beacon_layout.addWidget(org_tlvs_group_box, lldp_row, 0, 1, 4)
+            lldp_row += 1
+
+    # Create stack group box and layout
+    stack_group_box = QGroupBox("stack")
+    stack_layout = QGridLayout()
+    stack_fields = {
+        'dp': QLineEdit(),
+        'port': QLineEdit()
+    }
+
+    stack_row = 0
+    stack_col = 0
+    for field, widget in stack_fields.items():
+        # Lookup display name for the attribute
+        display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found
+        label = QLabel(display_name)
+        stack_layout.addWidget(label, stack_row, stack_col)
+        stack_layout.addWidget(widget, stack_row, stack_col + 1)
+        stack_col += 2
+        if stack_col >= 4:
+            stack_col = 0
+            stack_row += 1
+
+    stack_group_box.setLayout(stack_layout)
+    form_layout.addWidget(stack_group_box, row + 1, 0, 1, 4)
+
+    dialog_layout.addLayout(form_layout)
+
+    # Add OK and Cancel buttons
+    button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    button_box.accepted.connect(lambda: save_interface_changes(dialog, dp, fields, lldp_beacon_fields, org_tlvs_fields, stack_fields, config, dps_layout, interface))
+    button_box.rejected.connect(dialog.reject)
+    dialog_layout.addWidget(button_box)
+
+    dialog.setLayout(dialog_layout)
+    dialog.exec()
+
 # Add an new Interface definition
 def show_add_interface_dialog(config, dp, dps_layout):
     dialog = QDialog()
@@ -568,14 +780,8 @@ def show_add_interface_dialog(config, dp, dps_layout):
 
     form_layout = QGridLayout()
 
-    # Add interface name field
-    # name_label = QLabel("Interface No.")
-    # name_edit = QLineEdit()
-    # form_layout.addWidget(name_label, 0, 0)
-    # form_layout.addWidget(name_edit, 0, 1)
-
     fields = {
-        'acl_in': QLineEdit(),
+        #'acl_in': QLineEdit(),
         'acls_in': QLineEdit(),
         'description': QLineEdit(),
         'dot1x': QCheckBox(),
@@ -701,10 +907,13 @@ def show_add_interface_dialog(config, dp, dps_layout):
     dialog.setLayout(dialog_layout)
     dialog.exec()
 
-
-def save_interface_changes(dialog, dp, fields, lldp_beacon_fields, org_tlvs_fields, stack_fields, config, dps_layout):
-    next_key = str(max(dp.interfaces.keys(), default=0) + 1)
-    interface = Interface(name=next_key)
+# Save the new interface created or update the edits of an existing
+def save_interface_changes(dialog, dp, fields, lldp_beacon_fields, org_tlvs_fields, stack_fields, config, dps_layout, existing_interface=None):
+    if existing_interface:
+        interface = existing_interface
+    else:
+        next_key = str(max(dp.interfaces.keys(), default=0) + 1)
+        interface = Interface(name=next_key)
     
     for field, widget in fields.items():
         if isinstance(widget, QLineEdit):
@@ -749,15 +958,17 @@ def save_interface_changes(dialog, dp, fields, lldp_beacon_fields, org_tlvs_fiel
     if not hasattr(dp, 'interfaces'):
         dp.interfaces = {}
 
-    # Find the next available integer key for the new interface
-    #next_key = max(dp.interfaces.keys(), default=0) + 1
-    dp.interfaces[next_key] = interface
+    # If this is a new interface
+    if not existing_interface:
+        # Find the next available integer key for the new interface
+        #next_key = max(dp.interfaces.keys(), default=0) + 1
+        dp.interfaces[next_key] = interface
 
     globals.unsaved_changes = True
     refresh_dps_tab(config, dps_layout)
     dialog.accept()
 
-# Delete the DP
+# Delete the selected DP
 def show_delete_dialog(config, dp_name, dps_layout):
     delete_dialog = QDialog()
     delete_dialog.setWindowTitle("Delete DP")
@@ -780,6 +991,7 @@ def delete_dp(config, dp_name, dps_layout, delete_dialog):
         refresh_dps_tab(config, dps_layout)
     delete_dialog.accept()
 
+# Delete the current inrterface
 def delete_interface(config, dp, iface_key, dps_layout):
     msg_box = QMessageBox()
     msg_box.setWindowTitle("Delete Interface")
@@ -835,7 +1047,7 @@ def add_tlv(lldp_beacon, config, dps_layout):
             "oui": oui_input.value(),
             "subtype": subtype_input.value()
         }
-        print(f'lldp_beacon={lldp_beacon}')
+        #print(f'lldp_beacon={lldp_beacon}')
         lldp_beacon['org_tlvs'].append(new_tlv)
         dialog.accept()
         refresh_dps_tab(config, dps_layout)
@@ -848,12 +1060,12 @@ def add_tlv(lldp_beacon, config, dps_layout):
 # Create the DPS tab.................
 def create_dps_tab(config, dps_layout=None):
     if dps_layout is None:
-        print('layout is none')
+        #print('layout is none')
         dps_tab = QWidget()
         dps_layout = QVBoxLayout()
         dps_tab.setLayout(dps_layout)
     else:
-        print('using parent widget')
+        #print('using parent widget')
         dps_tab = dps_layout.parentWidget()
 
     # For each DP in DPS
@@ -916,23 +1128,28 @@ def create_dps_tab(config, dps_layout=None):
         # For each attribute in the DP
         for attr, value in dp.__dict__.items():
             if value is not None and value != [] and value != {}:
-                print('attr=' + attr, type(value))
+                #print('attr=' + attr, type(value))
                 # Handle the DP dictionary attributes in their own sub-groupboxes
                 if attr == 'interfaces' and isinstance(value, dict):
                     row += 1
                     interfaces_label = QLabel("Interfaces")
                     interfaces_label.setStyleSheet("font-weight: bold;")
                     grid_layout.addWidget(interfaces_label, row, 0, 1, 2)
-                    #row += 1
-                    print(f'value={value}')
+                    #print(f'value={value}')
+                    
                     for iface_name, iface in value.items():
                         iface_group_box = QGroupBox(str(iface_name)) 
                         iface_group_box.setStyleSheet("QGroupBox { font-size: 10pt; font-weight: bold; }")
                         #iface_group_box.setFixedWidth(750)
-                        iface_layout = QGridLayout()                        
+                        iface_layout = QGridLayout()                         
+
+                        # Add Edit Interface button
+                        edit_iface_button = QPushButton("Edit Interface")
+                        iface_layout.addWidget(edit_iface_button, 0, 0, 1, 2)
+                        edit_iface_button.clicked.connect(lambda _, dp=dp, iface=iface: show_edit_interface_dialog(config, dp, dps_layout, iface))                   
 
                         delete_iface_button = QPushButton("Delete Interface")
-                        iface_layout.addWidget(delete_iface_button, 0, 0, 1, 2)
+                        iface_layout.addWidget(delete_iface_button, 0, 2, 1, 2)
                         delete_iface_button.clicked.connect(lambda _, dp=dp, iface_key=iface_name: delete_interface(config, dp, iface_key, dps_layout))
 
                         iface_row = 1
@@ -963,9 +1180,7 @@ def create_dps_tab(config, dps_layout=None):
                                     iface_widget.setFixedWidth(200)
                                 elif isinstance(iface_value, dict) and iface_attr == 'lldp_beacon':
                                     iface_row += 1
-                                    print(f'lldp_beacon value={iface_value}')
-                                    #lldp_label = QLabel("LLDP")
-                                    #iface_layout.addWidget(lldp_label, iface_row, 0)
+                                    #print(f'lldp_beacon value={iface_value}')
                                     lldp_group_box = QGroupBox("LLDP")
                                     lldp_group_box.setStyleSheet("QGroupBox { font-size: 10pt; font-weight: bold; }")
                                     lldp_layout = QGridLayout()
@@ -979,9 +1194,9 @@ def create_dps_tab(config, dps_layout=None):
                                     lldp_row += 1
 
                                     for lldp_attr, lldp_value in iface_value.items():
-                                        if lldp_attr == 'org_tlvs':
-                                            print(f'org_tlvs value={lldp_value}')
-                                            print('attr=' + lldp_attr, type(lldp_value))
+                                        #if lldp_attr == 'org_tlvs':
+                                            # print(f'org_tlvs value={lldp_value}')
+                                            # print('attr=' + lldp_attr, type(lldp_value))
                                         # Lookup display name for the attribute
                                         if lldp_attr != 'org_tlvs':
                                             display_name = DISPLAY_NAMES.get(lldp_attr, lldp_attr)  # Fallback to attr if not found
@@ -1007,7 +1222,7 @@ def create_dps_tab(config, dps_layout=None):
                                             lldp_widget.setFixedWidth(200)
                                             lldp_widget.textChanged.connect(lambda text, iface_value=iface_value, a=lldp_attr: update_lldp_str(iface_value, a, text))
                                         elif isinstance(lldp_value, list) and lldp_attr == 'org_tlvs':
-                                            print('Starting org_tlvs')
+                                            # print('Starting org_tlvs')
                                             for tlv_index, tlv in enumerate(lldp_value):
                                                 if lldp_col > 0:
                                                     lldp_col = 0
@@ -1056,9 +1271,7 @@ def create_dps_tab(config, dps_layout=None):
 
                                                     tlv_layout.addWidget(tlv_attr_label, tlv_row, tlv_col)
                                                     tlv_layout.addWidget(tlv_widget, tlv_row, tlv_col + 1)
-                                                    tlv_col += 2
-                                                    # if tlv_col >= 3:
-                                                    #     tlv_row += 1                                                
+                                                    tlv_col += 2                                         
 
                                                 tlv_group_box.setLayout(tlv_layout)
                                                 lldp_layout.addWidget(tlv_group_box, lldp_row, lldp_col, 1, 4)
@@ -1090,14 +1303,14 @@ def create_dps_tab(config, dps_layout=None):
 
                                 # Slot function to update the iface value
                                 def update_iface_value(iface_attr, iface_widget, iface):
-                                    print('Updating=' + iface_attr)
+                                    # print('Updating=' + iface_attr)
                                     if isinstance(iface_widget, QSpinBox) or isinstance(iface_widget, QDoubleSpinBox):
                                         setattr(iface, iface_attr, iface_widget.value())
                                     elif isinstance(iface_widget, QCheckBox):
                                         setattr(iface, iface_attr, iface_widget.isChecked())
                                     else:
                                         setattr(iface, iface_attr, iface_widget.text())
-                                    print('Setting unsaved = True')
+                                    # print('Setting unsaved = True')
                                     globals.unsaved_changes = True  # Mark as unsaved changes
 
                                 # Update functions for lldp attributes
@@ -1133,7 +1346,7 @@ def create_dps_tab(config, dps_layout=None):
                         grid_layout.addWidget(iface_group_box, row, 1, 1, 3)
                         row += 1
                 elif attr == 'dot1x' and isinstance(value, dict):
-                    print('dot1x')
+                    # print('dot1x')
                     row += 1
                     dot1x_label = QLabel("Dot1x")
                     dot1x_label.setStyleSheet("font-weight: bold;")
@@ -1142,7 +1355,7 @@ def create_dps_tab(config, dps_layout=None):
                     dot1x_group_box.setStyleSheet("QGroupBox { font-size: 10pt; font-weight: bold; }")
                     #dot1x_group_box.setFixedWidth(750)
                     dot1x_layout = QGridLayout()
-                    print(f'value={value}')
+                    # print(f'value={value}')
                     
                     def update_dot1x_bool(dot1x_dict, attr, state):
                         dot1x_dict[attr] = bool(state)
@@ -1206,7 +1419,7 @@ def create_dps_tab(config, dps_layout=None):
                         dot1x_group_box.setLayout(dot1x_layout)
                         grid_layout.addWidget(dot1x_group_box, row, 1, 1, 3)
                 elif attr == 'lldp_beacon' and isinstance(value, dict):
-                    print('lldp_beacon')
+                    # print('lldp_beacon')
                     row += 1
                     lldp_label = QLabel("LLDP")
                     lldp_label.setStyleSheet("font-weight: bold;")
@@ -1215,7 +1428,7 @@ def create_dps_tab(config, dps_layout=None):
                     lldp_group_box.setStyleSheet("QGroupBox { font-size: 10pt; font-weight: bold; }")
                     #lldp_group_box.setFixedWidth(750)
                     lldp_layout = QGridLayout()
-                    print(f'value={value}')
+                    # print(f'value={value}')
 
                     def update_lldp_bool(lldp_dict, attr, state):
                         lldp_dict[attr] = bool(state)
@@ -1263,7 +1476,7 @@ def create_dps_tab(config, dps_layout=None):
                             lldp_widget.setFixedWidth(200)
                             lldp_widget.textChanged.connect(lambda text, value=value, a=lldp_attr: update_lldp_str(value, a, text))
                         elif isinstance(lldp_value, list):
-                            print('List for=' + lldp_attr)
+                            # print('List for=' + lldp_attr)
                             lldp_widget = QLineEdit()
                             lldp_widget.setText(", ".join(map(str, lldp_value)))  # Convert list to comma-separated string
                             lldp_widget.setFixedWidth(200)
@@ -1281,16 +1494,15 @@ def create_dps_tab(config, dps_layout=None):
                         lldp_group_box.setLayout(lldp_layout)
                         grid_layout.addWidget(lldp_group_box, row, 1, 1, 3)
                 elif attr == 'stack' and isinstance(value, dict):
-                    print('Stack')
+                    # print('Stack')
                     row += 1
                     stack_label = QLabel("Stack")
                     stack_label.setStyleSheet("font-weight: bold;")
                     grid_layout.addWidget(stack_label, row, 0, 1, 2)
                     stack_group_box = QGroupBox() 
                     stack_group_box.setStyleSheet("QGroupBox { font-size: 10pt; font-weight: bold; }")
-                    #stack_group_box.setFixedWidth(750)
                     stack_layout = QGridLayout()
-                    print(f'value={value}')
+                    #print(f'value={value}')
 
                     def update_stack_bool(stack_dict, attr, state):
                         stack_dict[attr] = bool(state)
@@ -1338,7 +1550,7 @@ def create_dps_tab(config, dps_layout=None):
                             stack_widget.setFixedWidth(200)
                             stack_widget.textChanged.connect(lambda text, value=value, a=stack_attr: update_stack_str(value, a, text))
                         elif isinstance(stack_value, list):
-                            print('List for=' + stack_attr)
+                            # print('List for=' + stack_attr)
                             stack_widget = QLineEdit()
                             stack_widget.setText(", ".join(map(str, stack_value)))  # Convert list to comma-separated string
                             stack_widget.setFixedWidth(200)
