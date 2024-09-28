@@ -210,6 +210,9 @@ yaml.add_representer(Meter, meter_representer)
 def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=True, save_acls=True, save_meters=True):
     # Create a dictionary to hold the parts of the configuration to save
     data_to_save = {}
+
+    print('####config.routers')
+    print(config.routers)
     
     if save_vlans:
         # Convert route dictionaries back into Route objects
@@ -217,7 +220,24 @@ def save_config(config, yaml_file, save_vlans=True, save_routers=True, save_dps=
             vlan.routes = [Route(route['ip_dst'], route['ip_gw']) for route in vlan.routes]
         data_to_save['vlans'] = config.vlans
     if save_routers:
-        data_to_save['routers'] = config.routers
+        data_to_save['routers'] = []
+        for name, route in config.routers.items():
+            kconfig = {
+                name: {
+                    'vlans': route.vlans,
+                    'bgp': {
+                        'as': route.bgp.as_number,
+                        'connect_mode': route.bgp.connect_mode,  
+                        'neighbor_as': route.bgp.neighbor_as,
+                        'routerid': route.bgp.routerid,
+                        'server_addresses': route.bgp.server_addresses,
+                        'neighbor_addresses': route.bgp.neighbor_addresses,
+                        'vlan': route.bgp.vlan,
+                        'port': route.bgp.port,
+                    }
+                }
+            }
+            data_to_save['routers'].append(kconfig)
     if save_dps:
         data_to_save['dps'] = config.dps
     if save_acls:

@@ -50,7 +50,8 @@ def load_router(data):
         routerid=bgp_info.get('routerid', ''),
         server_addresses=bgp_info.get('server_addresses', []),
         neighbor_addresses=bgp_info.get('neighbor_addresses', []),
-        neighbor_as=bgp_info.get('neighbor_as', 0)
+        neighbor_as=bgp_info.get('neighbor_as', 0),
+        connect_mode=bgp_info.get('connect_mode','')
     )
 
     return Router(vlans, bgp)

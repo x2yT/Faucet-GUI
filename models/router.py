@@ -1,5 +1,5 @@
 class Bgp:
-    def __init__(self, vlan='', as_number=0, port=0, routerid='', server_addresses=None, neighbor_addresses=None, neighbor_as=0):
+    def __init__(self, vlan='', as_number=0, port=0, routerid='', server_addresses=None, neighbor_addresses=None, neighbor_as=0, connect_mode=''):
         self.vlan = vlan
         self.as_number = as_number
         self.port = port
@@ -7,6 +7,7 @@ class Bgp:
         self.server_addresses = server_addresses if server_addresses is not None else []
         self.neighbor_addresses = neighbor_addresses if neighbor_addresses is not None else []
         self.neighbor_as = neighbor_as
+        self.connect_mode = connect_mode
 
 class Router:
     def __init__(self, vlans=None, bgp=None):

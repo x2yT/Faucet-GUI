@@ -217,6 +217,18 @@ def create_routers_tab(config, routers_layout=None, scroll_area=None):
             print("Unsaved Changed=" + str(globals.unsaved_changes))
         routerid_edit.textChanged.connect(update_routerid)
 
+        # Add a connect_mode for bgp
+        vlans_layout.addWidget(QLabel("Connect Mode:"), route_row, 0)
+        connect_mode_edit = QLineEdit(route.bgp.connect_mode, vlans_groupbox)
+        vlans_layout.addWidget(connect_mode_edit, route_row, 1, 1, 3)
+        route_row += 1
+        # Slot function to update route.bgp.connect_mode with the description
+        def update_connect_mode(text):
+            route.bgp.connect_mode = [text]
+            globals.unsaved_changes = True  # Mark as unsaved changes
+            print("Unsaved Changed=" + str(globals.unsaved_changes))
+        connect_mode_edit.textChanged.connect(update_connect_mode)
+
         # Add server and neighbor addr 
         vlans_layout.addWidget(QLabel("Server Addresses:"), route_row, 0)
         server_addr_edit = QLineEdit(', '.join(route.bgp.server_addresses), vlans_groupbox)
