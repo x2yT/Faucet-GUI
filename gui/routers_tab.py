@@ -4,6 +4,8 @@ from PyQt6.QtWidgets import QWidget, QDialog, QGroupBox, QGridLayout, QLineEdit,
 from configfile.loader import new_config, Router, Bgp  # Assuming new_config is imported from loader.py
 import globals
 
+cnt=0
+
 # Define a dialog class for adding routes
 class AddVlanDialog(QDialog):
     def __init__(self, parent=None):
@@ -100,7 +102,11 @@ def create_routers_tab(config, routers_layout=None, scroll_area=None):
         new_router_name = "New Router"
         new_bgp = Bgp()
         new_vlan = []
-        new_router = Router(new_bgp, new_vlan)
+        global cnt
+        cnt+=1
+        new_name="default"+str(cnt)
+        new_vlan.append(new_name)
+        new_router = Router(new_vlan, new_bgp)
         config.routers[new_router_name] = new_router
 
         # Refresh the Router tab
@@ -148,17 +154,19 @@ def create_routers_tab(config, routers_layout=None, scroll_area=None):
             line_edit.setFixedWidth(width)  # Set fixed width
             return line_edit
         
-        # Add other VLAN details to the form
-        router_layout.addWidget(QLabel("Vlans:"), row, 0)
-        vlans_edit = create_line_edit(', '.join(route.vlans), router_groupbox)
-        router_layout.addWidget(vlans_edit, row, 1)
-        row += 1
-        # Slot function to update user changes back to route.vlans
-        def update_vlans(text):
-            route.vlans = text.split(', ')
-            globals.unsaved_changes = True  # Mark as unsaved changes
-        # Connect the textChanged signal to the slot function
-        vlans_edit.textChanged.connect(update_vlans)
+        print(route.vlans)
+        if len(route.vlans) > 0: 
+            # Add other VLAN details to the form
+            router_layout.addWidget(QLabel("Vlans:"), row, 0)
+            vlans_edit = create_line_edit(', '.join(route.vlans), router_groupbox)
+            router_layout.addWidget(vlans_edit, row, 1)
+            row += 1
+            # Slot function to update user changes back to route.vlans
+            def update_vlans(text):
+                route.vlans = text.split(', ')
+                globals.unsaved_changes = True  # Mark as unsaved changes
+            # Connect the textChanged signal to the slot function
+            vlans_edit.textChanged.connect(update_vlans)
 
         # Add Static Routes group box
         vlans_groupbox = QGroupBox("Bgp", router_groupbox)        
@@ -175,7 +183,7 @@ def create_routers_tab(config, routers_layout=None, scroll_area=None):
         as_spinbox.setRange(1, 4094)  # Assuming VLAN IDs range from 1 to 4094
         as_spinbox.setValue(route.bgp.as_number)
         vlans_layout.addWidget(as_spinbox, route_row, 1)
-        route_row += 1
+        route_row += 1              
         # Slot function to update route.bgp.as_number
         def update_as(value):
             route.bgp.as_number = value
@@ -254,7 +262,7 @@ def create_routers_tab(config, routers_layout=None, scroll_area=None):
 
         router_layout.addWidget(vlans_groupbox, row, 0, 1, 4)
         row += 1
-        
+            
         # Add the "Remove Router" button
         remove_router_button = QPushButton("Remove Router")
         router_layout.addWidget(remove_router_button, row, 0, 1, 2)
@@ -266,7 +274,7 @@ def create_routers_tab(config, routers_layout=None, scroll_area=None):
             if reply == QMessageBox.StandardButton.Yes:
                 del config.routers[router_name]
                 globals.unsaved_changes = True  # Mark as unsaved changes
-                refresh_routers_tab(config, router_layout, scroll_area)
+                refresh_routers_tab(config, routers_layout, scroll_area)
 
         # Connect the button click to the remove_vlan slot
         remove_router_button.clicked.connect(lambda _, router_name=name: remove_router(router_name))
