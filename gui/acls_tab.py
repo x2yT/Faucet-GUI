@@ -99,7 +99,8 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
         new_acl_name = "new acl"
         new_acl = ACL(
             name=new_acl_name,
-            rules={}
+            # rules={}
+            rules=[]
         )
         config.acls[new_acl_name] = new_acl
         # Refresh the ACLS tab
@@ -150,7 +151,7 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
             ('packet_type', int), ('pbb_isid', str), ('pbb_uca', int), ('sctp_dst', int), ('sctp_src', int),
             ('tcp_dst', int), ('tcp_flags', int), ('tcp_src', int), ('tp_dst', int), ('tp_src', int),
             ('tunnel_id', str), ('udp_dst', int), ('udp_src', int), ('vlan_pcp', int), ('vlan_vid', int)
-]
+        ]
         # Add the fields to the dialog
         row = 1
         col = 0
