@@ -7,7 +7,7 @@ from models.router import Router, Bgp
 from models.dp import DP, Interface
 from models.config import Config
 from models.acls import ACL, Rule
-from models.meter import Meter, Band
+from models.meter import Meter
 
 
 
