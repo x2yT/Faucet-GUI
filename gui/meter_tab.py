@@ -100,10 +100,11 @@ class MetersTab(QWidget):
         selected_flags = self.flags_input.currentText().strip().split(',')
 
         try:
+            meter_id = int(meter_id)
             meter_rate = int(meter_rate_text)
             meter_burst_size = int(meter_burst_size_text)
         except ValueError:
-            QMessageBox.warning(self, "Invalid Input", "Rate and Burst Size must be integers.")
+            QMessageBox.warning(self, "Invalid Input", "Meter ID, Rate and Burst Size must be integers.")
             return
 
         if not meter_id or not meter_name:
