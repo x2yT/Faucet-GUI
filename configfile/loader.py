@@ -251,9 +251,15 @@ def load_config(yaml_file, ):
 
     progress_bar.setValue(4)
 
-    try:
+        try:
         meters_data = data.get('meters', {})
-        meters = {k: load_meter(v) for k, v in meters_data.items()}
+        # Update to load meters as dictionaries, converting bands accordingly
+        meters = {}
+        for k, meter_data in meters_data.items():
+            # Create bands from dictionaries
+            bands = [Band(**band) for band in meter_data.get('bands', [])]
+            meters[k] = Meter(meter_id=meter_data['meter_id'], unit=meter_data['unit'], bands=bands)
+
         meters_loaded = True
     except Exception as e:
         print(f"Failed to load meters: {e}")
@@ -300,9 +306,12 @@ def new_config():
     )
 
     default_meter = Meter(
-        meter_id=1,
-        bands=[default_band],
-        unit="kbps"
+        meter_id=-1,
+        name='Default Meter',
+        rate=0,
+        burst_size=0,
+        flags=[],
+        bands=[]  # Initialize bands as an empty list
     )
 
     vlans = {'default_vlan': default_vlan}
