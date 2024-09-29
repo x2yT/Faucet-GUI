@@ -141,8 +141,8 @@ def tunnel_action_representer(dumper, data):
 def meter_representer(dumper, data):
     return dumper.represent_dict({
         'meter_id': data.meter_id,
-        'bands': data.bands,
-        'unit': data.unit
+        #'unit': data.unit,
+        'bands': data.bands  # Bands are now dictionaries
     })
 
 
