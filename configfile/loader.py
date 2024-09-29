@@ -156,23 +156,32 @@ def load_acls(acls_data):
     return acls
 
 
-def load_band(data):
-    return Band(
-        rate=data.get('rate', 0),
-        burst_size=data.get('burst', None),
-        action=data.get('action', None)
-    )
-
-
 def load_meter(data):
-    bands_data = data.get('bands', [])
-    bands = [load_band(band) for band in bands_data]
+    # Get the bands data from the meter configuration
+    bands_data = data.get('entry', {}).get('bands', [])
+
+    # Prepare bands as dictionaries instead of loading from a Band class
+    bands = [{
+        'type': band.get('type', None),
+        'rate': band.get('rate', 0),
+        'burst_size': band.get('burst_size', None),
+        'prec_level': band.get('prec_level', 0)
+    } for band in bands_data]
 
     return Meter(
         meter_id=data.get('meter_id', None),  # Default value None if not provided
-        bands=bands,
-        unit=data.get('unit', "kbps")
+        rate=data.get('entry', {}).get('rate', 0),
+        burst_size=data.get('entry', {}).get('burst_size', None),
+        flags=data.get('entry', {}).get('flags', []),
+        bands=bands
     )
+
+
+def load_meters(file_path):
+    with open(file_path, 'r') as file:
+        data = yaml.safe_load(file)
+    # Assuming you want to load all meters into a dictionary
+    return {name: load_meter(meter_data) for name, meter_data in data.get('meters', {}).items()}
 
 
 # def convert_dl_type_to_hex(data):
