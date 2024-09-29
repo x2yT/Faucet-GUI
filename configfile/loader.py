@@ -299,12 +299,6 @@ def new_config():
         rules=[]
     )
 
-    default_band = Band(
-        rate=0,
-        burst_size=0,
-        action=''
-    )
-
     default_meter = Meter(
         meter_id=-1,
         name='Default Meter',
