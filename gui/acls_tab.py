@@ -3,6 +3,67 @@ from PyQt6.QtCore import Qt
 from configfile.loader import new_config, ACL, Rule  # Assuming new_config is imported from loader.py
 import globals
 
+DISPLAY_NAMES = {
+    'actset_output': 'Actset Output',
+    'arp_op': 'ARP Op',
+    'arp_sha': 'ARP SHA',
+    'arp_spa': 'ARP SPA',
+    'arp_tpa': 'ARP TPA',
+    'arp_tha': 'ARP THA',
+    'dl_dst': 'DL Dst',
+    'dl_src': 'DL Src',
+    'dl_type': 'DL Type',
+    'dl_vlan': 'DL VLAN',
+    'dl_vlan_pcp': 'DL VLAN PCP',
+    'eth_dst': 'Eth Dst',
+    'eth_src': 'Eth Src',
+    'eth_type': 'Eth Type',
+    'icmpv4_code': 'ICMPv4 Code',
+    'icmpv4_type': 'ICMPv4 Type',
+    'icmpv6_code': 'ICMPv6 Code',
+    'icmpv6_type': 'ICMPv6 Type',
+    'in_phy_port': 'In Phy Port',
+    'in_port': 'In Port',
+    'ip_dscp': 'IP DSCP',
+    'ip_ecn': 'IP ECN',
+    'ip_proto': 'IP Proto',
+    'ipv4_dst': 'IPv4 Dst',
+    'ipv4_src': 'IPv4 Src',
+    'ipv6_dst': 'IPv6 Dst',
+    'ipv6_exthdr': 'IPv6 Exthdr',
+    'ipv6_flabel': 'IPv6 Flabel',
+    'ipv6_nd_sll': 'IPv6 ND SLL',
+    'ipv6_nd_target': 'IPv6 ND Target',
+    'ipv6_nd_tll': 'IPv6 ND TLL',
+    'ipv6_src': 'IPv6 Src',
+    'metadata': 'Metadata',
+    'mpls_bos': 'MPLS BOS',
+    'mpls_label': 'MPLS Label',
+    'mpls_tc': 'MPLS TC',
+    'nw_proto': 'NW Proto',
+    'nw_src': 'NW Src',
+    'nw_dst': 'NW Dst',
+    'nw_tos': 'NW TOS',
+    'packet_type': 'Packet Type',
+    'pbb_isid': 'PBB ISID',
+    'pbb_uca': 'PBB UCA',
+    'port': 'Port',
+    'ports': 'Ports',
+    'sctp_dst': 'SCTP Dst',
+    'sctp_src': 'SCTP Src',
+    'set_fields': 'Set Fields',
+    'tcp_dst': 'TCP Dst',
+    'tcp_flags': 'TCP Flags',
+    'tcp_src': 'TCP Src',
+    'tp_dst': 'TP Dst',
+    'tp_src': 'TP Src',
+    'tunnel_id': 'Tunnel ID',
+    'udp_dst': 'UDP Dst',
+    'udp_src': 'UDP Src',
+    'vlan_pcp': 'VLAN PCP',
+    'vlan_vid': 'VLAN VID'
+}
+
 # Function to refresh the ACLS tab
 def refresh_acls_tab(config, acls_layout, scroll_area):
     # Clear the existing layout
@@ -94,7 +155,8 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
         row = 1
         col = 0
         for attr, attr_type in attributes:
-            label = QLabel(attr)
+            display_name = DISPLAY_NAMES.get(attr, attr)  # Fallback to attr if not found        
+            label = QLabel(display_name)
             form_layout.addWidget(label, row, col)
             col +=1
             if attr_type == int:
@@ -169,7 +231,8 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
         row = 1
         col = 0
         for attr, attr_type in attributes:
-            label = QLabel(attr)
+            display_name = DISPLAY_NAMES.get(attr, attr)  # Fallback to attr if not found    
+            label = QLabel(display_name)
             form_layout.addWidget(label, row, col)
             col += 1
             if attr_type == int:
@@ -268,7 +331,8 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
             elif action_type == 'output':
                 output_widgets.clear()  # Clear the dictionary instead of redefining it
                 for field in ['port', 'ports', 'pop_vlans', 'vlan_vid', 'swap_vid', 'vlan_vids', 'failover', 'tunnel']:
-                    label = QLabel(field, dialog)
+                    display_name = DISPLAY_NAMES.get(field, field)  # Fallback to attr if not found    
+                    label = QLabel(display_name, dialog)
                     line_edit = QLineEdit(dialog)
                     dynamic_layout.addWidget(label)
                     dynamic_layout.addWidget(line_edit)
@@ -418,7 +482,7 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                     if key == 'actions':
                         action_row = 0 # Row to display the action on
                         #rule_layout.addWidget(QLabel(f"{key}:"), 0, 4)
-                        item_label = QLabel(f"{key}:")
+                        item_label = QLabel('Actions:')
                         item_label.setStyleSheet("font-weight: bold;")
                         item_label.setFixedWidth(90)
                         rule_layout.addWidget(item_label, action_row, 3)
@@ -428,7 +492,7 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                         # Display the actions details
                         for ak, av in value.items():
                             if ak == 'allow':
-                                value_checkbox = QCheckBox('allow', rule_groupbox)
+                                value_checkbox = QCheckBox('Allow', rule_groupbox)
                                 value_checkbox.setChecked(av)
                                 rule_layout.addWidget(value_checkbox, action_row, 4)   
                                 action_row += 1
@@ -440,7 +504,7 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
 
                                 value_checkbox.stateChanged.connect(lambda state, rule=rule, ak=ak: on_allow_checkbox_change(state, rule, ak))
                             elif ak == 'force_port_vlan':
-                                value_checkbox = QCheckBox('force_port_vlan', rule_groupbox)
+                                value_checkbox = QCheckBox('Force Port VLAN', rule_groupbox)
                                 value_checkbox.setChecked(av)
                                 rule_layout.addWidget(value_checkbox, action_row, 4)     
                                 action_row += 1
@@ -452,7 +516,7 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
 
                                 value_checkbox.stateChanged.connect(lambda state, rule=rule, ak=ak: on_force_checkbox_change(state, rule, ak))
                             elif ak == 'cookie':
-                                item_label = QLabel('cookie', rule_groupbox)
+                                item_label = QLabel('Cookie', rule_groupbox)
                                 item_label.setFixedWidth(90)
                                 rule_layout.addWidget(item_label, action_row, 3)
                                 value_spinkbox = QSpinBox(rule_groupbox)
@@ -468,7 +532,7 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                     
                                 value_spinkbox.valueChanged.connect(lambda value, rule=rule, ak=ak: on_value_spinkbox_change(value, rule, ak))
                             elif ak == 'meter':
-                                item_label = QLabel('meter', rule_groupbox)
+                                item_label = QLabel('Meter', rule_groupbox)
                                 item_label.setFixedWidth(90)
                                 rule_layout.addWidget(item_label, action_row, 3)
                                 meter_edit = QLineEdit(str(av), rule_groupbox)
@@ -482,7 +546,7 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                     
                                 meter_edit.textChanged.connect(lambda text, rule=rule, ak=ak: on_value_spinkbox_change(text, rule, ak))
                             elif ak == 'mirror':
-                                item_label = QLabel('mirror', rule_groupbox)
+                                item_label = QLabel('Mirror', rule_groupbox)
                                 item_label.setFixedWidth(90)
                                 rule_layout.addWidget(item_label, action_row, 3)
                                 value_edit = QLineEdit(str(av), rule_groupbox)
@@ -495,23 +559,31 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                     rule.actions[ak] = text
                                     
                                 value_edit.textChanged.connect(lambda text, rule=rule, ak=ak: on_value_spinkbox_change(text, rule, ak))
-                            # Output and ct actions are disctionaries of settings
+                            # Output and ct actions are dictionaries of settings
                             elif isinstance(av, dict):
-                                item_label = QLabel(ak, rule_groupbox)
+                                if ak == 'output':
+                                    display_name = 'Output'
+                                elif ak == 'ct':
+                                    display_name = 'CT'
+                                else:
+                                    display_name = ak
+                                item_label = QLabel(display_name, rule_groupbox)
                                 item_label.setFixedWidth(90)
                                 rule_layout.addWidget(item_label, action_row, 3)
                                 # Iterate the settings in the dictionary
                                 for ok, ov in av.items():
                                     # Check if the setting is a list
                                     if isinstance(ov, list):
-                                        item_label = QLabel(ok, rule_groupbox)
+                                        display_name = DISPLAY_NAMES.get(ok, ok)  # Fallback to attr if not found                     
+                                        item_label = QLabel(display_name, rule_groupbox)
                                         item_label.setFixedWidth(90)
                                         rule_layout.addWidget(item_label, action_row, 4)
                                         for lv in ov:
                                             if isinstance(lv, dict):
                                                 for sfk, sfv in lv.items():
-                                                    item_label = QLabel(sfk, rule_groupbox)
-                                                    print('sfk=' + sfk)
+                                                    display_name = DISPLAY_NAMES.get(sfk, sfk)  # Fallback to attr if not found
+                                                    item_label = QLabel(display_name, rule_groupbox)
+                                                    #print('sfk=' + sfk)
                                                     item_label.setFixedWidth(90)
                                                     rule_layout.addWidget(item_label, action_row, 5)
                                                     value_edit = QLineEdit(str(sfv), rule_groupbox)
@@ -539,7 +611,8 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                                     
                                                 value_edit.textChanged.connect(lambda text, ov=ov, lv=lv: on_value_edit_change_lv(text, ov, lv))                                    
                                     else:
-                                        item_label = QLabel(ok, rule_groupbox)
+                                        display_name = DISPLAY_NAMES.get(ok, ok)  # Fallback to attr if not found
+                                        item_label = QLabel(display_name, rule_groupbox)
                                         item_label.setFixedWidth(90)
                                         rule_layout.addWidget(item_label, action_row, 4)
                                         value_edit = QLineEdit(str(ov), rule_groupbox)
@@ -553,7 +626,9 @@ def create_acls_tab(config, acls_layout=None, scroll_area=None):
                                             
                                         value_edit.textChanged.connect(lambda text, av=av, ok=ok: on_value_edit_change(text, av, ok))                                      
                     else:
-                        item_label = QLabel(f"{key}:", rule_groupbox)
+                        print('ACLS item=' + key)
+                        display_name = DISPLAY_NAMES.get(key, key)  # Fallback to attr if not found
+                        item_label = QLabel(display_name, rule_groupbox)
                         item_label.setFixedWidth(90)
                         rule_layout.addWidget(item_label, rule_row, 0)
                         if isinstance(value, int):
