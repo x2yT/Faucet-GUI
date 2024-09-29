@@ -251,7 +251,7 @@ def load_config(yaml_file, ):
 
     progress_bar.setValue(4)
 
-        try:
+    try:
         meters_data = data.get('meters', {})
         # Update to load meters as dictionaries, converting bands accordingly
         meters = {}
