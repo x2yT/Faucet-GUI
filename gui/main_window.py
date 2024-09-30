@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
         # Create a central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        
+ 
         # Create a vertical layout for the central widget
         layout = QVBoxLayout(central_widget)
         
@@ -154,6 +154,9 @@ class MainWindow(QMainWindow):
         # Create and add the Meters tab
         meters_tab = MetersTab(self.config)
         self.tabs.addTab(meters_tab, "Meters")
+        
+        # Connect the tab change signal to the on_tab_change method
+        self.tabs.currentChanged.connect(self.on_tab_change)
 
     def closeEvent(self, event):
         # Check if any changes have been made and not saved
@@ -164,3 +167,14 @@ class MainWindow(QMainWindow):
                 event.ignore()
                 return
         event.accept()
+
+    # Logic to run if the user switches tabs
+    def on_tab_change(self, index):
+        # There is a bug that causes the VLANs and Routers tabs to display incorrectly
+        #  when switching from another tab... But fixes itself if the user resizes the
+        #  window! This code emulates that action
+        if self.tabs.tabText(index) == "VLANs" or self.tabs.tabText(index) == "Routers":
+            print('Refresh VLANs')
+            # Set the window geometry (position and size)
+            self.setGeometry(100, 100, 901, 800)
+            self.setGeometry(100, 100, 900, 800)
