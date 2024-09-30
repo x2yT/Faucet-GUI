@@ -1,21 +1,30 @@
 meters:
+  # Example Meter 1
   meter1:
     meter_id: 1
+    rate: 1000
+    burst_size: 100
     entry:
-      flags: ['KBPS', 'BURST']
+      flags: 
+        - KBPS  # Based on GUI dropdown
       bands:
-        - type: DROP
-          rate: 1000
-          burst_size: 100
-        - type: DROP
-          rate: 2000
-          burst_size: 200
+        - type: DROP  # Default type shown in the bands section
+          rate: 1000  
+          burst_size: 100  
+          prec_level: 0  
+          
+  # Example Meter 2
   meter2:
     meter_id: 2
+    rate: 1500
+    burst_size: 200
     entry:
-      flags: ['KBPS']
+      flags: 
+        - PKTPS  # User can choose different flags from dropdown
       bands:
-        - type: DROP
-          rate: 1500
-          burst_size: 150
+        - type: DSCP_REMARK  
+          rate: 1500  
+          burst_size: 200  
+          prec_level: 3  
+
 
