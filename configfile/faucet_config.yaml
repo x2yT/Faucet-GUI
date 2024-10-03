@@ -1,0 +1,267 @@
+acls:
+  access-port-protect:
+  - rule:
+      actions:
+        allow: 0
+      dl_type: 2048
+      udp_dst: 6877
+      udp_src: 67
+  - rule:
+      actions:
+        allow: 0
+      dl_type: 34525
+      udp_dst: 546
+      udp_src: 547
+  - rule:
+      actions:
+        allow: 0
+      dl_type: 34525
+  - rule:
+      actions:
+        allow: 0
+      dl_type: 2048
+      tcp_dst: 25
+  - rule:
+      actions:
+        output:
+          port: s1
+          ports:
+          - 400
+          - 401
+          - 402
+          set_fields:
+          - eth_dst: 72:b8:3c:4c:dc:4d
+      dl_type: 2048
+      udp_dst: 53
+  - rule:
+      actions:
+        output:
+          port: s1
+          set_fields:
+          - eth_dst: 72:b8:3c:4c:dc:4d
+      dl_type: 2048
+      tcp_dst: 53
+  - rule:
+      actions:
+        allow: 1
+  office-vlan-protect:
+  - rule:
+      actions:
+        allow: 0
+      dl_type: 2048
+      ipv4_dst: 10.0.200.0/24
+      ipv4_src: 10.0.100.0/24
+  - rule:
+      actions:
+        allow: 1
+        cookie: 12
+        force_port_vlan: 0
+        meter: simon
+        mirror: reflect
+  service-port-protect:
+  - rule:
+      actions:
+        allow: 0
+      dl_type: 34525
+  - rule:
+      actions:
+        allow: 0
+      dl_type: 2048
+      tcp_dst: 25
+  - rule:
+      actions:
+        allow: 1
+dps:
+  sw1:
+    advertise_interval: 23
+    dot1x:
+      dot1x_assigned: true
+      radius_ip: abcdef
+    dp_id: 1
+    hardware: Open vSwitch
+    interfaces:
+      1:
+        acls_in:
+        - access-port-protect
+        - service-port-protect
+        description: host1 container
+        name: h1
+        native_vlan: office
+      2:
+        acls_in:
+        - access-port-protect
+        description: host2 container
+        lldp_beacon:
+          enable: true
+          org_tlvs:
+          - info: infostring
+            oui: 123
+            subtype: 456
+          - info: infostring2
+            oui: 1234
+            subtype: 4567
+          port_descr: Testing123
+        name: h2
+        native_vlan: office
+      3:
+        acls_in:
+        - access-port-protect
+        description: guest1 container
+        name: g1
+        native_vlan: guest
+      4:
+        acls_in:
+        - service-port-protect
+        description: services container
+        name: s1
+        native_vlan: office
+      5:
+        acls_in:
+        - access-port-protect
+        description: VLAN trunk to sw2
+        name: trunk
+        tagged_vlans:
+        - office
+    lldp_beacon:
+      send_interval: 5000
+      system_name: Faucet
+    stack:
+      down_time_multiple: 4
+      priority: 12
+  sw2:
+    dp_id: 2
+    hardware: Allied-Telesis
+    interfaces:
+      1:
+        acls_in:
+        - access-port-protect
+        description: raspberry pi
+        name: pi
+        native_vlan: office
+      2:
+        acls_in:
+        - access-port-protect
+        description: guest laptop
+        name: laptop
+        native_vlan: guest
+      4:
+        acls_in:
+        - access-port-protect
+        description: services Laptop
+        name: s1
+        native_vlan: guest
+      24:
+        description: VLAN trunk to sw1
+        name: trunk
+        tagged_vlans:
+        - office
+        - guest
+meters:
+  internet_access:
+    bands:
+    - burst_size: 50
+      prec_level: 1
+      rate: 500000
+      type: DSCP_REMARK
+    flags:
+    - KBPS
+    - BURST
+    meter_id: 1
+  video_streaming:
+    bands:
+    - burst_size: 20
+      prec_level: 2
+      rate: 100000
+      type: DSCP_REMARK
+    flags:
+    - KBPS
+    - PKTPS
+    meter_id: 2
+  voice_traffic:
+    bands:
+    - burst_size: 30
+      prec_level: 0
+      rate: 20000
+      type: DROP
+    flags:
+    - KBPS
+    meter_id: 3
+  file_download:
+    bands:
+    - burst_size: 10
+      prec_level: 3
+      rate: 1000
+      type: DROP
+    - burst_size: 15
+      prec_level: 1
+      rate: 5000
+      type: DSCP_REMARK
+    flags:
+    - BURST
+    - KBPS
+    meter_id: 4
+  background_updates:
+    bands:
+    - burst_size: 5
+      prec_level: 0
+      rate: 100
+      type: DROP
+    flags:
+    - KBPS
+    meter_id: 5
+  backup_service:
+    bands:
+    - burst_size: 25
+      prec_level: 1
+      rate: 15000
+      type: DSCP_REMARK
+    - burst_size: 10
+      prec_level: 2
+      rate: 7000
+      type: DROP
+    flags:
+    - BURST
+    - KBPS
+    meter_id: 6
+routers:
+  router-office-guest:
+    bgp:
+      as: 0
+      connect_mode: ''
+      neighbor_addresses: []
+      neighbor_as: 0
+      port: 0
+      routerid: ''
+      server_addresses: []
+      vlan: ''
+    vlans:
+    - office
+    - guest
+vlans:
+  guest:
+    description: guest network
+    faucet_mac: 0e:00:00:00:20:01
+    faucet_vips:
+    - 10.0.200.254/24
+    - 2001:200::1/64
+    - fe80::c00:00ff:fe00:2001/64
+    name: ''
+    vid: 200
+  office:
+    acls_in:
+    - office-vlan-protect
+    description: office network
+    faucet_mac: 0e:00:00:00:10:01
+    faucet_vips:
+    - 10.0.100.254/24
+    - 2001:100::1/64
+    - fe80::c00:00ff:fe00:1001/64
+    name: ''
+    routes:
+    - route:
+        ip_dst: 192.168.0.0/24
+        ip_gw: 10.0.100.2
+    - route:
+        ip_dst: 192.168.0.0/25
+        ip_gw: 10.0.100.3
+    vid: 100
