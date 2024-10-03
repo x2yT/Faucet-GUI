@@ -1,15 +1,17 @@
 from PyQt6.QtWidgets import (
     QWidget, QFormLayout, QLineEdit, QPushButton, QMessageBox,
     QComboBox, QVBoxLayout, QTableWidget, QTableWidgetItem,
-    QSpinBox, QCheckBox, QHeaderView, QGroupBox, QLabel, QListWidget
+    QSpinBox, QCheckBox, QHeaderView, QGroupBox, QLabel, QListWidget,
+    QSpacerItem, QSizePolicy
 )
-
+from models.meter import Meter
 
 class MetersTab(QWidget):
     def __init__(self, config):
         super().__init__()
         self.config = config
         self.init_ui()
+        self.load_saved_meters()  # Load saved meters on initialization
 
     def init_ui(self):
         layout = QFormLayout()
@@ -22,13 +24,14 @@ class MetersTab(QWidget):
         self.meter_name_input = QLineEdit(self)
         layout.addRow("Meter Name:", self.meter_name_input)
 
+        # Remove the rate and burst size inputs
         # Rate input
-        self.meter_rate_input = QLineEdit(self)
-        layout.addRow("Rate (bps):", self.meter_rate_input)
+        # self.meter_rate_input = QLineEdit(self)
+        # layout.addRow("Rate (bps):", self.meter_rate_input)
 
         # Burst Size input
-        self.meter_burst_size_input = QLineEdit(self)
-        layout.addRow("Burst Size:", self.meter_burst_size_input)
+        # self.meter_burst_size_input = QLineEdit(self)
+        # layout.addRow("Burst Size:", self.meter_burst_size_input)
 
         # Flags dropdown
         self.flags_input = QComboBox(self)
@@ -69,6 +72,13 @@ class MetersTab(QWidget):
 
         self.setLayout(layout)
 
+    def load_saved_meters(self):
+        """Load meters from the configuration into the list widget."""
+        self.meter_list_widget.clear()  # Clear any existing items
+        if self.config.meters:  # Ensure meters attribute exists and is not empty
+            for meter_name in self.config.meters.keys():
+                self.meter_list_widget.addItem(meter_name)
+
     def add_band_row(self):
         """Add a new row for the band entry."""
         row_position = self.bands_table.rowCount()
@@ -95,16 +105,16 @@ class MetersTab(QWidget):
         """Save the meter configuration."""
         meter_id = self.meter_id_input.text().strip()
         meter_name = self.meter_name_input.text().strip()
-        meter_rate_text = self.meter_rate_input.text().strip()
-        meter_burst_size_text = self.meter_burst_size_input.text().strip()
+      #  meter_rate_text = self.meter_rate_input.text().strip()
+       # meter_burst_size_text = self.meter_burst_size_input.text().strip()
         selected_flags = self.flags_input.currentText().strip().split(',')
 
         try:
             meter_id = int(meter_id)
-            meter_rate = int(meter_rate_text)
-            meter_burst_size = int(meter_burst_size_text)
+            #meter_rate = int(meter_rate_text)
+            #meter_burst_size = int(meter_burst_size_text)
         except ValueError:
-            QMessageBox.warning(self, "Invalid Input", "Meter ID, Rate and Burst Size must be integers.")
+            QMessageBox.warning(self, "Invalid Input", "Meter ID must be integers.")
             return
 
         if not meter_id or not meter_name:
@@ -132,8 +142,8 @@ class MetersTab(QWidget):
         # Add or update the meter in the config
         self.config.meters[meter_name] = {
             'meter_id': int(meter_id),
-            'rate': meter_rate,
-            'burst_size': meter_burst_size,
+           # 'rate': meter_rate,
+            #'burst_size': meter_burst_size,
             'flags': selected_flags,
             'bands': bands
         }
@@ -148,9 +158,7 @@ class MetersTab(QWidget):
 
     def update_meter_list(self):
         """Update the list of saved meters in the QListWidget."""
-        self.meter_list_widget.clear()
-        for meter_name in self.config.meters.keys():
-            self.meter_list_widget.addItem(meter_name)
+        self.load_saved_meters()  # Load meters from config
 
     def load_meter_details(self, current_item):
         """Load the selected meter's details into the input fields."""
@@ -158,29 +166,41 @@ class MetersTab(QWidget):
             return
 
         meter_name = current_item.text()
-        meter_data = self.config.meters[meter_name]
+        meter_data = self.config.meters.get(meter_name)
 
+        # If meter_data is None, show an error message and return
+        if meter_data is None:
+            QMessageBox.warning(self, "Error", "Meter data not found.")
+            return
 
+        # Check if meter_data is an instance of Meter or a dictionary
+        if isinstance(meter_data, Meter):
+            # Access attributes directly if meter_data is an instance of Meter
+            self.meter_id_input.setText(str(meter_data.meter_id))
+            self.meter_name_input.setText(meter_name)
+            flags = meter_data.flags
+            bands = meter_data.bands
+        else:
+            # Access dictionary fields if meter_data is a dictionary
+            self.meter_id_input.setText(str(meter_data.get('meter_id', '')))
+            self.meter_name_input.setText(meter_name)
+            flags = meter_data.get('flags', [])
+            bands = meter_data.get('bands', [])
 
-        self.meter_id_input.setText(str(meter_data['meter_id']))
-        self.meter_name_input.setText(meter_name)
-        self.meter_rate_input.setText(str(meter_data['rate']))
-        self.meter_burst_size_input.setText(str(meter_data['burst_size']))
-        self.flags_input.setCurrentText(', '.join(meter_data['flags']))
+        # Use .join() method to convert flags list to a string
+        self.flags_input.setCurrentText(', '.join(flags))
 
-            # Clear existing rows in the bands table
+        # Clear existing rows in the bands table
         self.bands_table.setRowCount(0)
-            # Load bands data
-        for band in meter_data['bands']:
-                self.add_band_row()
-                row_position = self.bands_table.rowCount() - 1
-                self.bands_table.cellWidget(row_position, 0).setCurrentText(band['type'])
-                self.bands_table.cellWidget(row_position, 1).setValue(band['rate'])
-                self.bands_table.cellWidget(row_position, 2).setValue(band['burst_size'])
-                self.bands_table.cellWidget(row_position, 3).setValue(band['prec_level'])
 
-
-
+        # Load bands data
+        for band in bands:
+            self.add_band_row()
+            row_position = self.bands_table.rowCount() - 1
+            self.bands_table.cellWidget(row_position, 0).setCurrentText(band.get('type', ''))
+            self.bands_table.cellWidget(row_position, 1).setValue(band.get('rate', 0))
+            self.bands_table.cellWidget(row_position, 2).setValue(band.get('burst_size', 0))
+            self.bands_table.cellWidget(row_position, 3).setValue(band.get('prec_level', 0))
     def delete_meter(self):
         """Delete the selected meter from the config."""
         current_item = self.meter_list_widget.currentItem()
@@ -198,6 +218,6 @@ class MetersTab(QWidget):
         """Clear input fields for new entry."""
         self.meter_id_input.clear()
         self.meter_name_input.clear()
-        self.meter_rate_input.clear()
-        self.meter_burst_size_input.clear()
+      #  self.meter_rate_input.clear()
+       # self.meter_burst_size_input.clear()
         self.bands_table.setRowCount(0)  # Clear the bands table
