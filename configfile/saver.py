@@ -137,12 +137,14 @@ def tunnel_action_representer(dumper, data):
         'dst_ip': data.dst_ip
     })
 
-# Custom representer for Meter objects
 def meter_representer(dumper, data):
+    # Create a dictionary representation of the Meter instance
     return dumper.represent_dict({
         'meter_id': data.meter_id,
-        #'unit': data.unit,
-        'bands': data.bands  # Bands are now dictionaries
+        #'rate': data.rate,  # Include rate
+        #'burst_size': data.burst_size,  # Include burst size
+        'flags': data.flags,  # Include flags
+        'bands': data.bands  # Assuming bands is already a list of dictionaries
     })
 
 

@@ -170,8 +170,8 @@ def load_meter(data):
 
     return Meter(
         meter_id=data.get('meter_id', None),  # Default value None if not provided
-        rate=data.get('entry', {}).get('rate', 0),
-        burst_size=data.get('entry', {}).get('burst_size', None),
+        #rate=data.get('entry', {}).get('rate', 0),
+        #burst_size=data.get('entry', {}).get('burst_size', None),
         flags=data.get('entry', {}).get('flags', []),
         bands=bands
     )
@@ -253,14 +253,23 @@ def load_config(yaml_file, ):
 
     try:
         meters_data = data.get('meters', {})
-        # Update to load meters as dictionaries, converting bands accordingly
         meters = {}
         for k, meter_data in meters_data.items():
-            # Create bands from dictionaries
-            bands = [Band(**band) for band in meter_data.get('bands', [])]
-            meters[k] = Meter(meter_id=meter_data['meter_id'], unit=meter_data['unit'], bands=bands)
+            # Call from_dict with name and meter_data
+            meter = Meter.from_dict(k, meter_data)  # Pass the key (k) as the name
+            meters[k] = meter  # Add the recreated meter to the meters dictionary
 
         meters_loaded = True
+        if meters_loaded:
+            self.meter_list_widget.clear()  # Clear the existing items
+            for meter_name, meter in meters.items():  # Use the loaded meters
+                self.meter_list_widget.addItem(meter_name)  # Add each meter name to the widget
+
+            # Optional: Print the loaded meters for debugging
+            print("Loaded Meters:")
+            for meter_name, meter in meters.items():
+                print(f"Name: {meter_name}, Data: {meter.__dict__}")  # Assuming Meter has a __dict__ for easy printing
+
     except Exception as e:
         print(f"Failed to load meters: {e}")
 
@@ -302,10 +311,9 @@ def new_config():
     default_meter = Meter(
         meter_id=-1,
         name='Default Meter',
-        rate=0,
-        burst_size=0,
-        flags=[],
-        bands=[]  # Initialize bands as an empty list
+        #rate=0,
+       # burst_size=0,
+        flags='KBPS'
     )
 
     vlans = {'default_vlan': default_vlan}
